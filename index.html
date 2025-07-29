@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eric P. Jorbina, Jr.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<style>
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
+<body class="scroll-smooth">  
+    <section class="relative bg-white lg:grid lg:h-screen lg:place-content-center dark:bg-gray-900 overflow-hidden">
+  <!-- Background Image Shape -->
+<div
+  class="absolute inset-0 opacity-25"
+  style="
+    background-image: url('indexImgs/Blender.jpg');
+    background-size: cover;
+    background-position: center;
+    background-color: #111827;
+
+    /* Bottom-only fade */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+">
+</div>
+
+<!-- Music Control Icon -->
+<div class="absolute top-6 left-6 z-10">
+  <div class="click-sound hover-sound relative w-10 h-10 cursor-pointer group" onclick="toggleAudio()">
+    <!-- Pulsing Disk -->
+    <svg id="disk" class="play-sfx w-10 h-10 text-blue-400 hover:text-cyan-600 transition-colors duration-300"
+      xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+      <path
+        d="M18.6216 3.21667c.2391.1897.3784.47817.3784.78334V15.6667c0 .0412-.0025.0818-.0073.1218.0048.0698.0073.1404.0073.2115 0 1.6569-1.3431 3-3 3s-3-1.3431-3-3 1.3431-3 3-3c.3506 0 .6872.0602 1 .1707V9.2602l-8 1.8667V18l-.00001.0032C8.99824 19.6586 7.65577 21 6 21c-1.65685 0-3-1.3431-3-3s1.34315-3 3-3c.35064 0 .68722.0602 1 .1707V6.33334c0-.46474.32018-.86823.77277-.97384l9.99953-2.33321c.1486-.03477.3012-.03465.4467-.00201.1427.03202.2783.09532.3964.18752.0021.00162.0041.00324.0062.00487Z" />
+    </svg>
+
+    <!-- Floating Notes -->
+    <div id="notes" class="absolute inset-0 pointer-events-none">
+      <span class="note">🎵</span>
+      <span class="note">🎶</span>
+      <span class="note">🎼</span>
+    </div>
+
+    <!-- Hidden Audio -->
+    <audio id="audio1" loop>
+      <source src="sfx/gentle-fields-194622.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="audio2" loop>
+      <source src="sfx/soft-wind-318856.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+</div>
+
+<!-- Styles -->
+<style>
+  /* Heartbeat Animation */
+  .pulse {
+    animation: heartbeat 1.2s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    75% {
+      transform: scale(1.1);
+    }
+  }
+
+  /* Notes base style */
+.note {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.25rem;
+  color: #60a5fa; /* Tailwind's blue-400 */
+  opacity: 0;
+  pointer-events: auto;
+}
+
+/* Active floating animation */
+.note-active {
+  animation: floatNote 2s ease-in-out infinite;
+  opacity: 1;
+}
+
+.note:hover {
+  color: #06b6d4; /* Tailwind's cyan-600 */
+}
+
+.note:nth-child(1) {
+  animation-delay: 0s;
+}
+.note:nth-child(2) {
+  animation-delay: 0.6s;
+}
+.note:nth-child(3) {
+  animation-delay: 1.2s;
+}
+
+@keyframes floatNote {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -60px);
+    opacity: 0;
+  }
+}
+
+</style>
+
+<!-- JavaScript -->
+<script>
+  const disk = document.getElementById('disk');
+  const notes = document.querySelectorAll('.note');
+  const audio1 = document.getElementById('audio1');
+  const audio2 = document.getElementById('audio2');
+
+  // Volume settings
+  audio1.volume = 1;
+  audio2.volume = 1;
+
+  let isPlaying = false;
+  let loopMonitor1, loopMonitor2;
+
+  function toggleAudio() {
+    const unlockAudio = () => {
+      return Promise.all([
+        audio1.play().then(() => audio1.pause()).catch(() => {}),
+        audio2.play().then(() => audio2.pause()).catch(() => {})
+      ]);
+    };
+
+    unlockAudio().then(() => {
+      isPlaying = !isPlaying;
+
+      if (isPlaying) {
+        disk.classList.add('pulse');
+        notes.forEach(note => note.classList.add('note-active'));
+        startLoopingAudio(audio1, 2); // fade out 2 seconds before end
+        startLoopingAudio(audio2, 2);
+      } else {
+        disk.classList.remove('pulse');
+        notes.forEach(note => note.classList.remove('note-active'));
+        stopLoopingAudio(audio1);
+        stopLoopingAudio(audio2);
+      }
+    });
+  }
+
+  function startLoopingAudio(audio, fadeSecondsBeforeEnd = 2) {
+    audio.volume = 0;
+    audio.currentTime = 0;
+    audio.play();
+    fadeInAudio(audio);
+
+    const duration = audio.duration || 30; // fallback if not loaded
+
+    const monitor = setInterval(() => {
+      if (!isPlaying) return;
+
+      const timeLeft = audio.duration - audio.currentTime;
+      if (timeLeft <= fadeSecondsBeforeEnd) {
+        clearInterval(monitor);
+        fadeOutAudio(audio, () => {
+          audio.currentTime = 0;
+          audio.play();
+          fadeInAudio(audio);
+          // Restart monitoring
+          startLoopingAudio(audio, fadeSecondsBeforeEnd);
+        });
+      }
+    }, 200);
+
+    // Save monitor so we can clear it later
+    if (audio === audio1) loopMonitor1 = monitor;
+    if (audio === audio2) loopMonitor2 = monitor;
+  }
+
+  function stopLoopingAudio(audio) {
+    if (audio === audio1 && loopMonitor1) clearInterval(loopMonitor1);
+    if (audio === audio2 && loopMonitor2) clearInterval(loopMonitor2);
+
+    fadeOutAudio(audio, () => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  }
+
+  function fadeOutAudio(audio, callback) {
+    const fadeStep = 0.05;
+    const fadeInterval = setInterval(() => {
+      if (audio.volume > fadeStep) {
+        audio.volume -= fadeStep;
+      } else {
+        audio.volume = 0;
+        clearInterval(fadeInterval);
+        if (callback) callback();
+      }
+    }, 50);
+  }
+
+  function fadeInAudio(audio) {
+    const fadeStep = 0.05;
+    const fadeInterval = setInterval(() => {
+      if (audio.volume < 1 - fadeStep) {
+        audio.volume += fadeStep;
+      } else {
+        audio.volume = 1;
+        clearInterval(fadeInterval);
+      }
+    }, 50);
+  }
+
+  // Pause for modal
+  function pauseBackgroundAudio() {
+    if (isPlaying) {
+      stopLoopingAudio(audio1);
+      stopLoopingAudio(audio2);
+    }
+  }
+
+  // Resume for modal
+  function resumeBackgroundAudio() {
+    if (isPlaying) {
+      startLoopingAudio(audio1, 2);
+      startLoopingAudio(audio2, 2);
+    }
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="relative mx-auto w-screen max-w-screen-xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+    <div class="mx-auto max-w-prose text-center">
+      <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl dark:text-white">
+        Showcasing my <span class="text-cyan-400 font-extrabold">Creations</span>
+      </h1>
+
+      <p class="mt-4 text-lg text-gray-700 dark:text-gray-300">
+        Hi there! I'm <strong>Eric</strong>, a creative technologist passionate about bringing ideas to life through
+        <strong>video editing</strong>, <strong>game development</strong>, <strong>3D art</strong>, and <strong>web development</strong>.
+        This portfolio is a collection of my favorite works where creativity meets technical skill to craft engaging visuals and interactive experiences.
+      </p>
+
+      <div class="mt-4 flex justify-center gap-4 sm:mt-6">
+        <a
+        class="click-sound hover-sound inline-block rounded border border-cyan-600 bg-cyan-600 px-5 py-3 font-medium text-white shadow-sm transition-colors hover:bg-cyan-700"
+        href="#Start"
+      >
+        Get to Know Me
+      </a>
+
+
+        <a
+          class="click-sound hover-sound  inline-block rounded border border-cyan-300 px-5 py-3 font-medium text-cyan-700 shadow-sm transition-colors hover:bg-cyan-50 hover:text-cyan-900 dark:border-cyan-700 dark:text-cyan-300 dark:hover:bg-cyan-800 dark:hover:text-white"
+          href="#aboutme"
+        >
+          About Me
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- Video Section -->
+
+<section id="Start" class="bg-white dark:bg-gray-900">
+  <div class="container px-6 py-16 mx-auto">
+    <!-- Main Title -->
+    <h1 class="text-5xl font-extrabold text-center mb-20 text-gray-900 dark:text-white drop-shadow-md">
+      Video Edits
+    </h1>
+
+   <div class="mb-24">
+  <!-- Flex container for title and button -->
+  <div class="flex items-center justify-between mb-10">
+    <h2 class="text-3xl font-semibold text-gray-800 dark:text-white drop-shadow-sm">
+      🎬 Personal Edits
+    </h2>
+    <button onclick="showMoreModal()" class="hover-sound click-sound text-cyan-400 hover:underline transition cursor-pointer text-base">
+      Show More →
+    </button>
+  </div>
+  <!-- Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+      
+        <!-- Video 1 -->
+        <div onclick="openModal('19dBw0zMvvuDleZUkz9oM8-TB-SnYSen2')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+            <div class="relative">
+              <img src="vThumnail/minecrfttrailer.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="bg-black/50 rounded-full p-4">
+                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="py-4">
+              <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">A MINECRAFT TRAILER</h3>
+              <p class="mt-2 text-white drop-shadow-sm">A quick and fun edit that I did with my friends.</p>
+              <span class="flex items-center gap-2 text-sm text-gray-300">
+                Tools: Premiere Pro and Minecraft
+                <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+                <img src="svglogos/minecraft-svgrepo-com.svg" class="w-8 h-8">
+              </span>
+            </div>
+          </div>
+
+
+        <!-- Video 2 -->
+        <div onclick="openModal('1p2HTxn0AK4yRAc75OV1xIZOnMENFd-0D')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+            <div class="relative">
+              <img src="vThumnail/revenge.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="bg-black/50 rounded-full p-4">
+                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="py-4">
+            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">REVENGE</h3>
+            <p class="mt-2 text-white drop-shadow-sm">I made this for fun, talking about taking revenge on my friend.</p>
+            <span class="flex items-center gap-2 text-sm text-gray-300">
+              Tools: Premiere Pro and After Effects
+              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+              <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
+            </span>
+          </div>
+        </div>
+
+        <!-- Video 3 -->
+        <div onclick="openModal('1wd5Nhb900nrWLp5W6EKVcrd6hymdXZti')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+            <div class="relative">
+              <img src="vThumnail/bestweek.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="bg-black/50 rounded-full p-4">
+                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="py-4">
+            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">FOUNDERS WEEK VLOG</h3>
+            <p class="mt-2 text-white drop-shadow-sm">This was edited after the founders week on fellowship baptist college, it was full of fun and exciting moments.</p>
+            <span class="flex items-center gap-2 text-sm text-gray-300">
+              Tools: Premiere Pro
+              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+       
+
+    <!-- School Edits -->
+    <div class="mb-24">
+  <!-- Flex container for heading and button -->
+  <div class="flex items-center justify-between mb-10">
+    <h2 class="text-3xl font-semibold text-gray-800 dark:text-white drop-shadow-sm">
+      🎓 School Edits
+    </h2>
+    <a onclick="showSchoolModal()" class="hover-sound click-sound  text-cyan-400 hover:underline transition cursor-pointer text-base">
+      Show More →
+    </a>
+  </div>
+  <!-- Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+        <!-- Video 4 -->
+        <div onclick="openModal('1OyodRXj_73WNMlCftekRvaOFoAAia84x')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+            <div class="relative">
+              <img src="vThumnail/goodtime.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="bg-black/50 rounded-full p-4">
+                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="py-4">
+            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">MUSIC VIDEO w/Classmates</h3>
+            <p class="mt-2 text-white drop-shadow-sm">A fun music video project to represent how fun and energetic we are as BSIT students of fellowshipbaptist college.</p>
+            <span class="flex items-center gap-2 text-sm text-gray-300">
+              Tools: Premiere Pro
+              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+            </span>
+          </div>
+        </div>
+
+        <!-- Video 5 -->
+        <div onclick="openModal('V1mMHSH2dXF8f29iPXPkGjsA-ezsd0S3ZV')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+          <div class="relative">
+              <img src="vThumnail/iamw.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="bg-black/50 rounded-full p-4">
+                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="py-4">
+            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">I AM WORLD</h3>
+            <p class="mt-2 text-white drop-shadow-sm">A short film project made by me and my friend, which was inspired by the story of "The Egg" by Andy Weir.</p>
+            <span class="flex items-center gap-2 text-sm text-gray-300">
+              Tools: Premiere Pro and After Effects
+              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+              <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
+            </span>
+          </div>
+        </div>
+
+        <!-- Video 6 -->
+        <div onclick="openModal('1WT5TmgRxVLUXgzqKST8KYW1NxhtyH944')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
+          <div class="relative">
+              <img src="vThumnail/fnw.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="bg-black/50 rounded-full p-4">
+                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="py-4">
+            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">FROM NOWHERE TEASER</h3>
+            <p class="mt-2 text-white drop-shadow-sm">A teaser video for my game capstone project "From Nowhere".</p>
+            <span class="flex items-center gap-2 text-sm text-gray-300">
+              Tools: Premiere Pro and Unity3D
+              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+              <img src="svglogos/unity-svgrepo-com.svg" class="w-8 h-8">
+            </span>
+          </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Promotional Edits -->
+<div class="mb-24">
+  <h2 class="text-3xl font-semibold mb-10 text-gray-800 dark:text-white drop-shadow-sm text-center">📢 Promotional Edits</h2>
+  
+  <!-- Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+    
+    <!-- Video Card 1 -->
+<div onclick="openModal('1qJ8QM0mkieT3ZQVUgI0Km0LLqegiefpF')" 
+     class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+
+  <!-- Video Wrapper -->
+  <div class="relative">
+    <img src="vThumnail/enroll.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+    <div class="absolute inset-0 flex items-center justify-center">
+      <div class="bg-black/50 rounded-full p-4">
+        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: Title, Description, Tools -->
+  <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+    <div>
+      <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">ENROLLMENT VIDEO FOR FBC</h3>
+      <p class="mt-2 text-white drop-shadow-sm">I was tasked to create an enrollment video for the school.</p>
+    </div>
+    <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+      Tools: Premiere Pro and After Effects
+      <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
+      <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
+    </span>
+  </div>
+</div>
+
+
+
+    <!-- Video Card 2 -->
+<div onclick="openModal('1bdBVUCiwDurCPNJzQsuDuPsYOX4Psjy8')" 
+     class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+
+  <!-- Video Wrapper -->
+  <div class="relative">
+    <img src="vThumnail/ad.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+    <div class="absolute inset-0 flex items-center justify-center">
+      <div class="bg-black/50 rounded-full p-4">
+        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content: Title, Description, Tools -->
+  <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+    <div>
+      <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">CLIENT PROMOTIONAL VIDEO</h3>
+      <p class="mt-2 text-white drop-shadow-sm">
+        This was a video I edited for a client during my OJT at <strong>Precoce Technologies</strong>.
+        Here is the link to their website where the video is live:
+        <a href="https://www.topfinancialagency.com" 
+           target="_blank" 
+           onclick="event.stopPropagation();" 
+           class="text-cyan-400 underline hover:text-cyan-300 transition">
+          www.topfinancialagency.com
+        </a>
+      </p>
+    </div>
+    <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+      Tools: Canva
+      <img src="svglogos/Icon.jpeg" class="w-8 h-8">
+    </span>
+  </div>
+</div>
+
+
+
+  </div>
+</div>
+
+</section>
+<!-- Modal for Google Drive video -->
+<div id="videoModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center">
+  
+  <!-- Close button outside the video -->
+  <button onclick="closeModal()"
+  class="absolute top-4 right-6 w-10 h-10 flex items-center justify-center 
+         text-white text-2xl z-50 bg-gray-800 dark:bg-gray-900 
+         rounded-md shadow-md hover:bg-gray-800 transition">
+  &times;
+</button>
+
+  <!-- Video container with proper 16:9 aspect ratio -->
+  <div class="w-full max-w-4xl px-4">
+    <div class="relative w-full aspect-video">
+      <iframe id="videoFrame" class="absolute top-0 left-0 w-full h-full rounded-lg" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- JS -->
+<script>
+  function openModal(googleDriveFileId) {
+    const modal = document.getElementById('videoModal');
+    const iframe = document.getElementById('videoFrame');
+
+    // Generate Google Drive embed URL
+    iframe.src = `https://drive.google.com/file/d/${googleDriveFileId}/preview`;
+    modal.classList.remove('hidden');
+    pauseBackgroundAudio(); // 🔇 Pause music
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('videoModal');
+    const iframe = document.getElementById('videoFrame');
+
+    iframe.src = ''; // stop video
+    modal.classList.add('hidden');
+      // Play close sound
+    if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+    resumeBackgroundAudio(); // 🔊 Resume music
+  }
+
+  // Optional: click outside to close
+  document.getElementById('videoModal').addEventListener('click', function (e) {
+    if (e.target.id === 'videoModal') closeModal();
+  });
+</script>
+
+
+
+<!--Modal (More)-->
+
+<!-- More Personal Videos Modal -->
+<div id="moreVideosModal" class="fixed inset-0 bg-black bg-opacity-80 hidden overflow-y-auto px-4 py-12">
+
+  <div class="relative mx-auto w-full max-w-7xl bg-gray-900 rounded-lg p-8">
+    <button onclick="closeMoreModal()" class="hover-sound absolute top-2 right-4 text-white text-2xl px-3 py-1 z-50 bg-gray-800 rounded-md hover:bg-gray-700 transition">
+      &times;
+    </button>
+
+    <h2 class="text-3xl font-bold text-cyan-400 mb-6 text-center">More Personal Edits</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- More Personal Video -->
+      <div onclick="openModal('1ZcHYUucxNH0pY3rywZrzvbySW0-c8c6y')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/nerds.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">See You Nerds</h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">A Emotional and nostalgic good bye to our old group when i was young.</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+      <div onclick="openModal('1ttUsQdQd858-LBtjt-TAU1BrPq-qmrhy')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/boo.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">
+              BOO
+            </h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">A fun edit with me trying out 3d animations</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro and Blender
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+            <img src="svglogos/blender-svgrepo-com.svg " class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+      <div onclick="openModal('1aEcc5CnotCPL-xeG8povp1UbsPv3y61O')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/golden.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">
+              Golden Fredbear
+            </h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">Second part of the boo</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro and Blender
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+            <img src="svglogos/blender-svgrepo-com.svg " class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+      <div onclick="openModal('1v6Wi-Wee6tAq6gc3U0hA9jZkhahLt27V')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/grade11.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">Grade 11 Music Video</h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">A cute nostalgic music video of my grade 11th life.</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+ <!-- More School Videos Modal -->
+<div id="moreSchoolModal" class="fixed inset-0 bg-black bg-opacity-80 hidden overflow-y-auto px-4 py-12">
+
+  <div class="relative mx-auto w-full max-w-7xl bg-gray-900 rounded-lg p-8">
+    <button onclick="closeSchoolModal()" class="hover-sound absolute top-2 right-4 text-white text-2xl px-3 py-1 z-50 bg-gray-800 rounded-md hover:bg-gray-700 transition">
+      &times;
+    </button>
+
+    <h2 class="text-3xl font-bold text-cyan-400 mb-6 text-center">More School Edits</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- More School Video -->
+      <div onclick="openModal('18MY54fIpT1FGXzOj5b8bbd0qT3XfNU1p')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/vlogme.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">Day Vlog</h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">This was a project where we showcase what we do in a day of our life.</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+      <div onclick="openModal('1z4r-c3oryE9X-PCMEKTx4RRgP2sqC679')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
+        <div class="relative">
+          <img src="vThumnail/cebu.png"
+                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-black/50 rounded-full p-4">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title, Description, Tools -->
+        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
+          <div>
+            <h3 class="text-lg font-semibold text-cyan-400">Cebu-bohol trip vlog</h3>
+            <p class="mt-2 text-white text-sm drop-shadow-sm">This was a recent vlog, where we went to cebu and bohol for a educational tour.</p>
+          </div>
+          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
+            Tools: Premier Pro
+            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!--JS -->
+
+<script>
+  function showMoreModal() {
+    document.getElementById('moreVideosModal').classList.remove('hidden');
+  }
+
+  function closeMoreModal() {
+       // Play close sound
+    if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+    document.getElementById('moreVideosModal').classList.add('hidden');
+  }
+
+  function showSchoolModal() {
+    document.getElementById('moreSchoolModal').classList.remove('hidden');
+  }
+
+  function closeSchoolModal() {
+       // Play close sound
+    if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+    document.getElementById('moreSchoolModal').classList.add('hidden');
+  }
+</script>
+
+<!-- Game Development -->
+<section id="Start" class="relative bg-white dark:bg-gray-900 overflow-hidden">
+  <!-- Background image -->
+  <div class="absolute inset-0 bg-left bg-cover bg-no-repeat opacity-15"
+       style="background-image: url('GameDev/FrownowwhereFInal.png');">
+  </div>
+
+  <!-- Fading overlays -->
+  <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-white dark:from-gray-900 to-transparent z-10"></div>
+  <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white dark:from-gray-900 to-transparent z-10"></div>
+
+  <!-- Content -->
+  <div class="relative z-20 container px-6 py-20 mx-auto">
+    <h2 class="text-4xl text-center font-bold mb-16 text-gray-800 dark:text-white drop-shadow-sm">🎮 Game Dev Project</h2>
+
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+      <!-- Left: Image + Description -->
+      <div>
+        <img src="GameDev/animated/IMG_0111.PNG" alt="From Nowhere Logo"
+             class="w-full h-60 object-contain mb-6 rounded-xl shadow-lg mx-auto" />
+
+        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+          <strong>From Nowhere</strong> is a narrative-driven indie game about unraveling a mysterious house that blurs the lines between memory and reality. 
+          As the protagonist wakes up from a nightmare with the tasked to find out what or why the house is calling him, players must explore dreamlike landscapes, interact with strange Entities, and solve puzzles 
+          to discover who they are and what brought them to this place. It’s a journey about self-identity, trauma, and redemption set in a surreal universe.
+        </p>
+      </div>
+
+      <!-- Right: Team Members -->
+      <div class="text-center">
+        <h3 class="text-2xl font-semibold text-cyan-500 mb-6">👥 Team Members</h3>
+        <ul class="inline-block text-left space-y-4">
+          <li class="flex gap-4">
+            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Eric Jorbina Jr.</span>
+            <span class="text-gray-600 dark:text-gray-300">Game Designer / Programmer</span>
+          </li>
+          <li class="flex gap-4">
+            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Jim Tamson</span>
+            <span class="text-gray-600 dark:text-gray-300">Story Telling / Documentation</span>
+          </li>
+          <li class="flex gap-4">
+            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Kenth Jarred Pilares</span>
+            <span class="text-gray-600 dark:text-gray-300">3D Modeler / Artist</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Concept Art Gallery -->
+    <div class="mt-24">
+      <h3 class="text-2xl font-semibold text-cyan-500 mb-6 text-center">🎨 Concept Arts</h3>
+
+      <div id="conceptGallery" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center mt-6 space-x-2" id="conceptPagination"></div>
+    </div>
+
+    <!-- Progress Media -->
+    <div class="mt-24 text-center">
+      <h3 class="text-2xl font-semibold text-cyan-500 mb-6">🛠️ Game Development Progress</h3>
+
+      <div class="flex justify-center">
+        <div id="media-wrapper"
+          class="flex space-x-6 overflow-visible pb-6 max-w-5xl mx-auto px-2 transition-all duration-500 ease-in-out">
+
+          <!-- Filled by JS with items using the same hover animation class -->
+        </div>
+      </div>
+
+      <div id="pagination" class="flex justify-center space-x-2 mt-4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Scripts -->
+<script>
+  // ✅ Use 'let' to avoid duplicate declaration issues
+  // ─── 1) Re‑bind all .hover-sound & .click-sound elements ────────────────────────
+  function setupSoundListeners() {
+    document.querySelectorAll(".hover-sound").forEach(el => {
+      el.onmouseenter = () => {
+        // your global hoverAudio
+        hoverAudio.pause();
+        hoverAudio.currentTime = 0;
+        hoverAudio.play();
+      };
+    });
+    document.querySelectorAll(".click-sound").forEach(el => {
+      el.onclick = () => {
+        // your global clickAudio
+        clickAudio.pause();
+        clickAudio.currentTime = 0;
+        clickAudio.play();
+      };
+    });
+  }
+  
+  let conceptArts = [
+    { src: "GameDev/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Kenth Jarred Pilares" },
+    { src: "GameDev/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
+    { src: "GameDev/ConceptArt/IMG_0108.jpg", author: "by Jim Tamson" },
+  ];
+
+  let currentConceptPage = 0;
+  const conceptPerPage = 3;
+  let currentConceptIndex = 0;
+
+  function showConceptPage(page) {
+    const container = document.getElementById("conceptGallery");
+    const pagination = document.getElementById("conceptPagination");
+    container.innerHTML = "";
+    pagination.innerHTML = "";
+
+    const start = page * conceptPerPage;
+    const items = conceptArts.slice(start, start + conceptPerPage);
+
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <img src="${item.src}" alt="Concept Art"
+             class="hover-sound click-sound w-full h-48 object-cover rounded-xl shadow-md mb-2 cursor-pointer hover:scale-105 transition-transform"
+             onclick="openImageModal('${item.src}')">
+        <p class="text-sm text-center text-gray-500 dark:text-gray-400">${item.author}</p>
+      `;
+      container.appendChild(div);
+    });
+
+    const totalPages = Math.ceil(conceptArts.length / conceptPerPage);
+    for (let i = 0; i < totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i + 1;
+      btn.className = "hover-sound click-sound px-4 py-2 text-sm rounded-md mx-1 font-medium transition-colors duration-300 " +
+        (i === page
+          ? "bg-gray-800 text-white hover:bg-blue-500"
+          : "bg-white text-gray-700 border border-gray-300 dark:bg-gray-800 dark:text-gray-200 hover:bg-blue-500 hover:text-white");
+      btn.onclick = () => showConceptPage(i);
+      pagination.appendChild(btn);
+    }
+  }
+
+  function openImageModal(src) {
+    const index = conceptArts.findIndex(item => item.src === src);
+    if (index === -1) {
+      console.error("Image source not found in conceptArts:", src);
+      return;
+    }
+
+    currentConceptIndex = index;
+    updateConceptModal();
+
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeImageModal() {
+     // Play close sound
+    if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function nextConceptImage() {
+    currentConceptIndex = (currentConceptIndex + 1) % conceptArts.length;
+    updateConceptModal();
+  }
+
+  function prevConceptImage() {
+    currentConceptIndex = (currentConceptIndex - 1 + conceptArts.length) % conceptArts.length;
+    updateConceptModal();
+  }
+
+  function updateConceptModal() {
+    const image = conceptArts[currentConceptIndex];
+    const modalImg = document.getElementById('modalImage');
+    const caption = document.getElementById('modalCaption');
+
+    modalImg.classList.remove('opacity-100', 'scale-100');
+    modalImg.classList.add('opacity-0', 'scale-95');
+
+    setTimeout(() => {
+      modalImg.src = image.src;
+      caption.textContent = image.author || '';
+      modalImg.classList.remove('opacity-0', 'scale-95');
+      modalImg.classList.add('opacity-100', 'scale-100');
+    }, 150);
+  }
+
+  showConceptPage(currentConceptPage);
+
+  // Media items for video/image progress carousel
+  const mediaItems = [
+    { type: "video", src: "GameDev/VIdeo/484837993_9486038654772968_3589704999883936394_n.mp4", caption: "Gameplay Testing" },
+    { type: "image", src: "GameDev/457882625_1080195720488037_4061530265910010825_n.png", caption: "3D modeling some assets" },
+    { type: "video", src: "GameDev/VIdeo/2024-07-20 21-42-23.mp4", caption: "Early Level State" },
+    // Add more items here if needed
+  ];
+
+  const itemsPerPage = 3;
+  let currentPage = 0;
+
+  function renderMediaItems(page) {
+  const wrapper = document.getElementById("media-wrapper");
+  wrapper.innerHTML = "";
+
+  const start = page * itemsPerPage;
+  const items = mediaItems.slice(start, start + itemsPerPage);
+
+  items.forEach(item => {
+    const outer = document.createElement("div");
+    outer.className = "min-w-[320px] flex-shrink-0";
+
+    const hoverContainer = document.createElement("div");
+    hoverContainer.className = "transition-transform transform duration-300 ease-in-out hover:scale-[1.03]";
+
+    if (item.type === "image") {
+      hoverContainer.innerHTML = `
+        <img src="${item.src}" alt="${item.caption}"
+             class="hover-sound click-sound w-full h-48 object-cover rounded-xl cursor-pointer"
+             onclick="openGameDevImageModal('${item.src}', \`${item.caption}\`)">
+        <p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-2">${item.caption}</p>
+      `;
+    } else {
+  hoverContainer.innerHTML = `
+    <div class="hover-sound click-sound relative cursor-pointer rounded-xl overflow-hidden"
+         onclick="openLocalVideoModal('${item.src}')">
+      <video muted class="w-full h-48 object-cover pointer-events-none">
+        <source src="${item.src}" type="video/mp4">
+      </video>
+      <div class="absolute inset-0 flex items-center justify-center bg-black/40">
+        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-2">${item.caption}</p>
+  `;
+}
+
+    outer.appendChild(hoverContainer);
+    wrapper.appendChild(outer);
+  });
+}
+
+
+
+  function renderPagination() {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    const totalPages = Math.ceil(mediaItems.length / itemsPerPage);
+    for (let i = 0; i < totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i + 1;
+      btn.onclick = () => {
+        currentPage = i;
+        renderMediaItems(currentPage);
+        renderPagination();
+      };
+      btn.className = "hover-sound click-sound px-4 py-2 mx-1 text-sm font-medium rounded-md transition-colors duration-300 " +
+        (i === currentPage
+          ? "bg-gray-800 text-white hover:bg-blue-500"
+          : "bg-white text-gray-700 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 hover:bg-blue-500 hover:text-white");
+      pagination.appendChild(btn);
+    }
+  }
+
+  function setupSoundListeners() {
+  document.querySelectorAll(".hover-sound").forEach(el => {
+    el.onmouseenter = () => {
+      if (!hoverAudio.paused) {
+        hoverAudio.pause();
+        hoverAudio.currentTime = 0;
+      }
+      hoverAudio.play();
+    };
+  });
+
+  document.querySelectorAll(".click-sound").forEach(el => {
+    el.addEventListener("click", () => {
+      if (!clickAudio.paused) {
+        clickAudio.pause();
+        clickAudio.currentTime = 0;
+      }
+      clickAudio.play();
+    });
+  });
+}
+  function setupSoundListeners() {
+  // Delegate hover sound
+  document.body.addEventListener("mouseover", e => {
+    if (e.target.classList.contains("hover-sound")) {
+      if (!hoverAudio.paused) {
+        hoverAudio.pause();
+        hoverAudio.currentTime = 0;
+      }
+      hoverAudio.play();
+    }
+  });
+
+  // Delegate click sound
+  document.body.addEventListener("click", e => {
+    if (e.target.classList.contains("click-sound")) {
+      if (!clickAudio.paused) {
+        clickAudio.pause();
+        clickAudio.currentTime = 0;
+      }
+      clickAudio.play();
+    }
+  });
+}
+
+  renderMediaItems(currentPage);
+  renderPagination();
+  setupSoundListeners();
+</script>
+
+
+
+<!-- Game Dev Concept Art Modal with Arrows (Fixed & Final Version) -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
+  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
+    
+    <!-- Left Arrow -->
+    <button onclick="prevConceptImage()" class="hover-sound click-sound absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
+      ◀
+    </button>
+
+    <!-- Right Arrow -->
+    <button onclick="nextConceptImage()" class="hover-sound click-sound absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
+      ▶
+    </button>
+
+    <!-- Close Button -->
+    <button onclick="closeImageModal()" class="hover-sound absolute top-2 right-4 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
+      &times;
+    </button>
+
+    <!-- Image Container -->
+    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex flex-col justify-center items-center">
+      <img id="modalImage" src="" alt="Concept Art" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
+      <p id="modalCaption" class="mt-4 text-sm text-gray-400 text-center"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Game Dev Image Modal -->
+<div id="gameDevImageModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
+  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
+    
+    <!-- Close Button -->
+    <button onclick="closeGameDevImageModal()" class="absolute top-2 right-4 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
+      &times;
+    </button>
+
+    <!-- Image Container -->
+    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex flex-col justify-center items-center">
+      <img id="gameDevModalImage" src="" alt="Game Dev Media" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
+      <p id="gameDevModalCaption" class="mt-4 text-sm text-gray-400 text-center"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Local Video Modal -->
+<div id="localVideoModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
+  <div class="relative w-full max-w-5xl mx-auto bg-black rounded-lg overflow-hidden shadow-lg">
+    <button onclick="closeLocalVideoModal()"
+        class="hover-sound click-sound absolute top-2 right-2 text-white text-xl font-bold z-10 bg-gray-800 hover:bg-blue-600 w-10 h-10 flex items-center justify-center rounded">
+  ✕
+</button>
+    <video id="localModalVideo" controls autoplay class="w-full h-auto max-h-[80vh] rounded-lg">
+      <source src="" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</div>
+
+<!--Localvideo Modal-->
+<script>
+  function openLocalVideoModal(src) {
+  const video = document.getElementById("localModalVideo");
+  const modal = document.getElementById("localVideoModal");
+
+  // Update video source
+  video.pause();
+  video.querySelector("source").src = src;
+  video.load();
+  video.play();
+
+  // Show modal
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  pauseBackgroundAudio(); // 🔇 Pause music
+}
+
+function closeLocalVideoModal() {
+  const modal = document.getElementById("localVideoModal");
+  const video = document.getElementById("localModalVideo");
+
+  video.pause();
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  resumeBackgroundAudio(); // 🔊 Resume music
+
+  // Optional: play close audio
+  if (typeof closeAudio !== "undefined") {
+    if (!closeAudio.paused) {
+      closeAudio.pause();
+      closeAudio.currentTime = 0;
+    }
+    closeAudio.play();
+  }
+}
+
+</script>
+
+
+<!-- Concept Art Modal Script -->
+<script>
+  const conceptArts = [
+    { src: "GameDev/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Kenth Jarred Pilares" },
+    { src: "GameDev/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
+    { src: "GameDev/ConceptArt/IMG_0108.jpg", author: "by Jim Tamson" },
+    // Add more as needed
+  ];
+
+  let currentConceptIndex = 0;
+
+  function openImageModal(src) {
+    const index = conceptArts.findIndex(item => item.src === src);
+    if (index === -1) {
+      console.error("❌ Image source not found in conceptArts:", src);
+      return;
+    }
+
+    currentConceptIndex = index;
+    updateConceptModal();
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function nextConceptImage() {
+    currentConceptIndex = (currentConceptIndex + 1) % conceptArts.length;
+    updateConceptModal();
+  }
+
+  function prevConceptImage() {
+    currentConceptIndex = (currentConceptIndex - 1 + conceptArts.length) % conceptArts.length;
+    updateConceptModal();
+  }
+
+  function updateConceptModal() {
+    const image = conceptArts[currentConceptIndex];
+    const modalImg = document.getElementById('modalImage');
+    const caption = document.getElementById('modalCaption');
+
+    modalImg.classList.remove('opacity-100', 'scale-100');
+    modalImg.classList.add('opacity-0', 'scale-95');
+
+    setTimeout(() => {
+      modalImg.src = image.src;
+      caption.textContent = image.author || '';
+      modalImg.classList.remove('opacity-0', 'scale-95');
+      modalImg.classList.add('opacity-100', 'scale-100');
+    }, 150);
+  }
+</script>
+<!--GameDev Modal-->
+<script>
+  function openGameDevImageModal(src, caption = '') {
+    const modal = document.getElementById('gameDevImageModal');
+    const modalImg = document.getElementById('gameDevModalImage');
+    const modalCaption = document.getElementById('gameDevModalCaption');
+
+    modalImg.classList.remove('opacity-100', 'scale-100');
+    modalImg.classList.add('opacity-0', 'scale-95');
+
+    setTimeout(() => {
+      modalImg.src = src;
+      modalCaption.textContent = caption;
+      modalImg.classList.remove('opacity-0', 'scale-95');
+      modalImg.classList.add('opacity-100', 'scale-100');
+    }, 150);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeGameDevImageModal() {
+    if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+    const modal = document.getElementById('gameDevImageModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+</script>
+
+
+
+
+
+<!-- 3D Modeling Projects Section -->
+<section class="bg-white dark:bg-gray-900 py-10">
+  <div class="container px-6 mx-auto">
+    <h2 class="text-3xl font-semibold text-gray-800 capitalize dark:text-white mb-8">🧊 3D Modeling Projects</h2>
+
+    <!-- Cards injected by JavaScript -->
+    <div id="cardContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+
+    <!-- Pagination -->
+    <div id="paginationControls" class="flex justify-center mt-10 space-x-2"></div>
+  </div>
+</section>
+
+<!-- Modal (Fixed version for Modeling Projects) -->
+<div id="modelingModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
+  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
+    
+    <!-- Left Arrow -->
+    <button onclick="prevModelingImage()" class="hover-sound click-sound absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
+      ◀
+    </button>
+
+    <!-- Right Arrow -->
+    <button onclick="nextModelingImage()" class="hover-sound click-sound absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
+      ▶
+    </button>
+
+    <!-- Image & Close -->
+    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex justify-center items-center">
+      <!-- Close Button -->
+      <button onclick="closeModelingModal()" class="hover-sound absolute top-2 right-2 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
+        &times;
+      </button>
+
+      <img id="modelingModalImage" src="" alt="3D Project" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
+    </div>
+  </div>
+</div>
+
+
+<script>
+  function setupSoundListeners() {
+    document.querySelectorAll(".hover-sound").forEach(el => {
+      el.onmouseenter = () => {
+        // your global hoverAudio
+        hoverAudio.pause();
+        hoverAudio.currentTime = 0;
+        hoverAudio.play();
+      };
+    });
+    document.querySelectorAll(".click-sound").forEach(el => {
+      el.onclick = () => {
+        // your global clickAudio
+        clickAudio.pause();
+        clickAudio.currentTime = 0;
+        clickAudio.play();
+      };
+    });
+  }
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    const models = [
+      { title: "From Nowhere Poster", description: "It was a 3d model concept for our game From Nowhere.", image: "3DModels/Blenderfnw.png" },
+      { title: "3D Buildings", description: "I was practicing using a plugin for Blender", image: "3DModels/Buildings.jpg" },
+      { title: "Dog", description: "This was a Practice for for trying to test animation for the dog on our game.", image: "3DModels/dog.jpg" },
+      { title: "EarlyMorning", description: "This was my First 3d render that i did.", image: "3DModels/EarlyMorning.png" },
+      { title: "From Nowhere Final Poster", description: "The final version with lightings for the 3d model concept for our game From Nowhere.", image: "3DModels/finishedversfnw.jpg" },
+      { title: "Golden Freddy", description: "This model that i used i found in the internet, and i tried to animate it and add it to a video.", image: "3DModels/fnafanim.jpg" },
+      { title: "Fuse Box", description: "3D model of fusebox for our game From Nowhere.", image: "3DModels/fusebox.png" },
+      { title: "Star/Sun", description: "A star using a mix of different type of lightings.", image: "3DModels/star.jpg" }
+    ];
+
+    const itemsPerPage = 3;
+    let currentPage = 1;
+    let currentModalIndex = 0;
+
+    function renderCards(page) {
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const visibleModels = models.slice(start, end);
+      const container = document.getElementById('cardContainer');
+
+      container.innerHTML = visibleModels.map(model => `
+        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md transform transition-transform duration-300 hover:scale-105 cursor-pointer">
+          <img onclick="openModelingModal('${model.image}')" class="hover-sound click-sound w-full h-64 object-cover object-center" src="${model.image}" alt="${model.title}">
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-cyan-500 ">${model.title}</h3>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">${model.description}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(models.length / itemsPerPage);
+      const pagination = document.getElementById('paginationControls');
+      let html = '';
+
+      if (currentPage > 1) {
+        html += `<button onclick="goToPage(${currentPage - 1})" class="hover-sound click-sound px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Previous</button>`;
+      }
+
+      for (let i = 1; i <= totalPages; i++) {
+        const isCurrent = i === currentPage;
+        html += `<button onclick="goToPage(${i})"
+          class="hover-sound click-sound px-4 py-2 text-sm font-medium rounded-md ${
+            isCurrent
+              ? 'text-gray-400 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 cursor-not-allowed'
+              : 'text-blue-500 bg-white border border-gray-300 hover:bg-blue-600 hover:text-white dark:bg-gray-800 dark:text-white dark:border-gray-700'
+          }">${i}</button>`;
+      }
+
+      if (currentPage < totalPages) {
+        html += `<button onclick="goToPage(${currentPage + 1})" class="hover-sound click-sound px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Next</button>`;
+      }
+
+      pagination.innerHTML = html;
+    }
+
+    window.goToPage = function (page) {
+      currentPage = page;
+      renderCards(currentPage);
+      renderPagination();
+    };
+
+    window.openModelingModal = function (imageSrc) {
+      currentModalIndex = models.findIndex(model => model.image === imageSrc);
+      document.getElementById('modelingModalImage').src = imageSrc;
+      const modal = document.getElementById('modelingModal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.add('flex'), 10);
+    };
+
+    window.closeModelingModal = function () {
+      if (closeAudio) {
+      if (!closeAudio.paused) {
+        closeAudio.pause();
+        closeAudio.currentTime = 0;
+      }
+      closeAudio.play();
+    }
+      const modal = document.getElementById('modelingModal');
+      modal.classList.remove('flex');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.nextModelingImage = function () {
+      currentModalIndex = (currentModalIndex + 1) % models.length;
+      switchModelingImage(models[currentModalIndex].image);
+    };
+
+    window.prevModelingImage = function () {
+      currentModalIndex = (currentModalIndex - 1 + models.length) % models.length;
+      switchModelingImage(models[currentModalIndex].image);
+    };
+
+    function switchModelingImage(newSrc) {
+      const modalImage = document.getElementById('modelingModalImage');
+      modalImage.classList.remove('opacity-100', 'scale-100');
+      modalImage.classList.add('opacity-0', 'scale-95');
+      setTimeout(() => {
+        modalImage.src = newSrc;
+        modalImage.classList.remove('opacity-0', 'scale-95');
+        modalImage.classList.add('opacity-100', 'scale-100');
+      }, 150);
+    }
+
+    function setupSoundListeners() {
+  // Delegate hover sound
+  document.body.addEventListener("mouseover", e => {
+    if (e.target.classList.contains("hover-sound")) {
+      if (!hoverAudio.paused) {
+        hoverAudio.pause();
+        hoverAudio.currentTime = 0;
+      }
+      hoverAudio.play();
+    }
+  });
+
+  // Delegate click sound
+  document.body.addEventListener("click", e => {
+    if (e.target.classList.contains("click-sound")) {
+      if (!clickAudio.paused) {
+        clickAudio.pause();
+        clickAudio.currentTime = 0;
+      }
+      clickAudio.play();
+    }
+  });
+}
+    
+    // Initial load
+    renderCards(currentPage);
+    renderPagination();
+    setupSoundListeners();
+  });
+</script>
+
+
+<!-- Footer -->
+<footer id="aboutme" class="bg-white dark:bg-gray-900 pt-16 pb-10 text-center md:text-left">
+  <div class="max-w-6xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
+
+    <!-- Profile Image -->
+      <div class="shrink-0 flex justify-center md:justify-start">
+  <img src="indexImgs/Me.png" alt="Profile"
+       class="w-40 h-40 object-cover rounded-full shadow-md border-4 border-white dark:border-gray-700 ml-4 md:ml-6">
+</div>
+
+
+    <!-- About + Contact -->
+    <div class="flex-1">
+      <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-3">👋 About Me</h4>
+      <p class="text-gray-700 dark:text-gray-300 mb-4">
+        Hi! I’m <strong>Eric P. Jorbina Jr.</strong>, a recent graduate of Fellowship Baptist College with a strong passion for video editing, 3D modeling, and game development.
+        I'm eager to apply my IT skills in a professional environment and continuously grow within the tech industry.
+        This website was fully designed and coded by me to showcase my personal projects and creative work.
+      </p>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 text-gray-600 dark:text-gray-300">
+        <p><strong>Email:</strong>
+          <a href="mailto:jorbbinaeric@gmail.com" class="click-sound hover-sound text-cyan-500 hover:underline">jorbinaeric@gmail.com</a>
+        </p>
+        <p><strong>LinkedIn:</strong>
+          <a href="https://www.linkedin.com/in/eric-jorbina-a083a1349" target="_blank" class="click-sound hover-sound hover:underline">www.linkedin.com/in/eric-jorbina-a083a1349</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-6 px-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+    <p>🎵 I do not own any of the music used in the showcased videos. All audio belongs to their respective owners and is used solely for personal and non-commercial purposes.</p>
+    <p class="mt-4">&copy; 2025 Eric Jorbina Jr. All rights reserved.</p>
+  </div>
+</footer>
+
+
+
+
+<button
+  id="backToTop"
+  onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+  class="hidden fixed bottom-6 right-6 z-50 bg-cyan-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-cyan-700 transition"
+>
+  ↑
+</button>
+<script>
+  const backToTopBtn = document.getElementById("backToTop");
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.remove("hidden");
+    } else {
+      backToTopBtn.classList.add("hidden");
+    }
+  });
+</script>
+
+
+
+<!-- Script at the end of body -->
+<!-- Audio Elements for Hover, Click, and Close -->
+<audio id="hoverSound" preload="auto">
+  <source src="sfx/ui-sounds-pack-3-9-359722.mp3" type="audio/mpeg">
+  <source src="audio/hover.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+<audio id="clickSound" preload="auto">
+  <source src="sfx/ui-sounds-pack-3-18-359720.mp3" type="audio/mpeg">
+  <source src="audio/click.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+<audio id="closeSound" preload="auto">
+  <source src="sfx/ui-sounds-pack-4-6-359744.mp3" type="audio/mpeg">
+  <source src="audio/close.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+
+<script>
+  // Select audio elements
+  const hoverAudio = document.getElementById('hoverSound');
+  const clickAudio = document.getElementById('clickSound');
+  const closeAudio = document.getElementById('closeSound');
+
+  // Function to play sound and reset if already playing
+  function playSound(audio) {
+    if (!audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    audio.play();
+  }
+
+  // Add hover sound to specific elements
+  const hoverElements = document.querySelectorAll('.hover-sound');
+  hoverElements.forEach(element => {
+    element.addEventListener('mouseenter', () => playSound(hoverAudio));
+  });
+
+  // Add click sound to specific elements
+  const clickElements = document.querySelectorAll('.click-sound');
+  clickElements.forEach(element => {
+    element.addEventListener('click', () => playSound(clickAudio));
+  });
+
+  // Add close sound to modal close buttons
+  const closeButtons = document.querySelectorAll('.close');
+  closeButtons.forEach(button => {
+    button.addEventListener('click', () => playSound(closeAudio));
+  });
+</script>
+
+
+</body>
+</html>
+<script src="https://cdn.tailwindcss.com"></script>
