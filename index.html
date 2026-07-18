@@ -1,1692 +1,1856 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eric P. Jorbina, Jr.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eric P. Jorbina, Jr. — Creative Technologist</title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#0a1114',
+            raised: '#111b22',
+            raised2: '#16242b',
+            hairline: '#1e3340',
+            ink: '#ffffff',
+            muted: '#8baeb8',
+            brand: '#21a7eb',
+            sky: '#8CD4E8',
+            sky2: '#6bc4db',
+          },
+          fontFamily: {
+            display: ['"Bricolage Grotesque"', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* reset any forced white overrides */
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+    body {
+      background: #0a1114;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+    ::selection {
+      background: #21a7eb;
+      color: #0a1114;
+    }
+
+    #scrubbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(10, 17, 20, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #1e3340;
+    }
+    #scrubtrack {
+      position: relative;
+      height: 3px;
+      background: #1e3340;
+    }
+    #playhead {
+      position: absolute;
+      top: -5px;
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      background: #21a7eb;
+      box-shadow: 0 0 0 4px rgba(33, 167, 235, 0.18), 0 0 12px rgba(33, 167, 235, 0.6);
+      transform: translateX(-50%);
+      transition: left 80ms linear;
+    }
+    #scrubfill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: #21a7eb;
+      width: 0%;
+    }
+    .tc-btn {
+      position: relative;
+    }
+    .tc-btn[data-active="true"] .tc-label {
+      color: #21a7eb;
+    }
+    .tc-btn[data-active="true"] .tc-dot {
+      background: #21a7eb;
+      box-shadow: 0 0 8px rgba(33, 167, 235, .7);
+    }
+    .tc-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #3a5a6b;
+      transition: all .2s ease;
+    }
+
+    .vf-corner {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-color: #21a7eb;
+      opacity: .55;
+    }
+    .sprocket {
+      background-image: radial-gradient(circle, #1e3340 2px, transparent 2.4px);
+      background-size: 14px 14px;
+    }
+
+    .card-hover {
+      transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .6);
+    }
+
+    /* Defers offscreen layout/paint work for long image grids (Arts/Graphics) */
+    .grid-lazy-item {
+      content-visibility: auto;
+      contain-intrinsic-size: 260px 260px;
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .02em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #1e3340;
+      color: #8baeb8;
+      background: #111b22;
+    }
+
+    .modal-backdrop {
+      background: rgba(10, 17, 20, 0.88);
+      backdrop-filter: blur(6px);
+    }
+    .fade-img {
+      transition: opacity .3s ease, transform .3s ease;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a1114;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e3340;
+      border-radius: 8px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* falling leaves effect (music toggle) */
+    #leafLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 45;
+    }
+    .leaf {
+      position: absolute;
+      top: -10%;
+      will-change: transform, opacity;
+      animation: leaf-fall linear forwards;
+      opacity: 0.9;
+    }
+    @keyframes leaf-fall {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 0;
+      }
+      8% {
+        opacity: 0.9;
+      }
+      100% {
+        transform: translate(var(--drift, 60px), 115vh) rotate(var(--spin, 240deg));
+        opacity: 0.85;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .leaf {
+        animation: none;
+        display: none;
+      }
+    }
+
+    .section-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      color: #21a7eb;
+      letter-spacing: .12em;
+    }
+
+    .carousel-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      cursor: grab;
+      scroll-behavior: smooth;
+    }
+    .carousel-container::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel-item {
+      flex-shrink: 0;
+      width: 280px;
+    }
+    @media (min-width: 640px) {
+      .carousel-item {
+        width: 300px;
+      }
+    }
+    @media (min-width: 768px) {
+      .carousel-item {
+        width: 320px;
+      }
+    }
+
+    .carousel-btn {
+      transition: all 0.2s ease;
+      background: rgba(17, 27, 34, 0.8);
+      backdrop-filter: blur(4px);
+      border: 1px solid #1e3340;
+      color: #fff;
+    }
+    .carousel-btn:hover {
+      background: rgba(33, 167, 235, 0.15);
+      border-color: #21a7eb;
+      color: #21a7eb;
+    }
+
+    .game-slide {
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      opacity: 0;
+      transform: translateX(20px);
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+    .game-slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+      position: relative;
+    }
+    .game-slide.exit {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    .game-slide-container {
+      position: relative;
+      min-height: 600px;
+    }
+
+    /* light theme overrides removed – back to dark */
+    .text-white {
+      color: #ffffff !important;
+    }
+    .text-brand {
+      color: #21a7eb !important;
+    }
+    .border-brand {
+      border-color: #21a7eb !important;
+    }
+    .bg-brand {
+      background: #21a7eb !important;
+    }
+    .hover\:text-brand:hover {
+      color: #21a7eb !important;
+    }
+    .hover\:border-brand:hover {
+      border-color: #21a7eb !important;
+    }
+    .hover\:bg-brand:hover {
+      background: #21a7eb !important;
+    }
+    .shadow-brand {
+      --tw-shadow-color: rgba(33, 167, 235, 0.3) !important;
+    }
+
+    .bg-brand .text-white,
+    .bg-brand .text-white * {
+      color: #ffffff !important;
+    }
+
+    .bg-black\/30 {
+      background: rgba(0, 0, 0, 0.3) !important;
+    }
+    .bg-black\/40 {
+      background: rgba(0, 0, 0, 0.4) !important;
+    }
+    .bg-black\/60 {
+      background: rgba(0, 0, 0, 0.6) !important;
+    }
+    .bg-black\/50 {
+      background: rgba(0, 0, 0, 0.5) !important;
+      color: #ffffff !important;
+    }
+    .bg-black\/20 {
+      background: rgba(0, 0, 0, 0.2) !important;
+    }
+    .bg-black\/10 {
+      background: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .border-hairline {
+      border-color: #1e3340 !important;
+    }
+    .bg-raised {
+      background: #111b22 !important;
+    }
+    .bg-raised2 {
+      background: #16242b !important;
+    }
+    .bg-hairline {
+      background: #1e3340 !important;
+    }
+    .text-muted {
+      color: #8baeb8 !important;
+    }
+    .bg-base {
+      background: #0a1114 !important;
+    }
+    #hero {
+      background: #0a1114;
+      isolation: isolate;
+    }
+    #hero > div {
+      z-index: 1;
+    }
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: -32px;
+      z-index: 0;
+      background: linear-gradient(rgba(10, 17, 20, 0.58), rgba(10, 17, 20, 0.72)), url('indexImgs/Blender.jpg') center / cover;
+      filter: blur(22px);
+      border-bottom-left-radius: 65% 280px;
+    }
+
+    /* card hover text */
+    .card-hover .text-brand {
+      color: #21a7eb !important;
+    }
+
+    /* footer */
+    footer .text-muted {
+      color: #8baeb8 !important;
+    }
+
+    /* game dev description */
+    #gameSlides .text-white {
+      color: #ffffff !important;
+    }
+    #gameSlides .text-muted {
+      color: #8baeb8 !important;
+    }
+    #gameSlides .border-hairline {
+      border-color: #1e3340 !important;
+    }
+
+    /* Itch.io widget container – dark theme */
+    .itch-wrapper {
+      background: #0a1114;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .itch-wrapper iframe {
+      display: block;
+      width: 100%;
+    }
+
+    /* modal text */
+    #listModal .text-white {
+      color: #ffffff !important;
+    }
+    #listModal .text-muted {
+      color: #8baeb8 !important;
+    }
+    #listModal .border-hairline {
+      border-color: #1e3340 !important;
+    }
+
+    /* scrubber nav link text */
+    #scrubbar .text-white {
+      color: #ffffff !important;
+    }
+    #scrubbar .text-muted {
+      color: #8baeb8 !important;
+    }
+    #scrubbar .group-hover\:text-white:hover {
+      color: #ffffff !important;
+    }
+
+    /* hero section */
+    #hero .text-white {
+      color: #ffffff !important;
+    }
+    #hero .text-muted {
+      color: #8baeb8 !important;
+    }
+    #hero .bg-brand\/10 {
+      background: rgba(33, 167, 235, 0.1) !important;
+    }
+    #hero .bg-sky\/10 {
+      background: rgba(140, 212, 232, 0.1) !important;
+    }
+
+    /* section headings */
+    h2.text-white,
+    h3.text-white,
+    h4.text-white {
+      color: #ffffff !important;
+    }
+
+    /* game dev dots */
+    #gameDots button.bg-brand {
+      background: #21a7eb !important;
+    }
+    #gameDots button.bg-hairline {
+      background: #1e3340 !important;
+    }
+    #gameDots button:hover.bg-muted {
+      background: #8baeb8 !important;
+    }
+
+    /* carousel dots */
+    #carouselDots button.bg-brand {
+      background: #21a7eb !important;
+    }
+    #carouselDots button.bg-hairline {
+      background: #1e3340 !important;
+    }
+    #carouselDots button:hover.bg-muted {
+      background: #8baeb8 !important;
+    }
+
+    /* concept arts pagination dots */
+    [id^="conceptPagination-"] button,
+    [id^="pagination-"] button {
+      background: #1e3340 !important;
+    }
+    [id^="conceptPagination-"] button.bg-brand,
+    [id^="pagination-"] button.bg-brand {
+      background: #21a7eb !important;
+    }
+
+    /* back to top */
+    #backToTop {
+      background: #21a7eb !important;
+      color: #ffffff !important;
+    }
+
+    /* art modal caption */
+    #artModalCaption {
+      color: #8baeb8 !important;
+    }
+
+    /* game slide text in description */
+    .game-slide .text-base.text-white {
+      color: #ffffff !important;
+    }
+    .game-slide .text-base.text-white strong,
+    .game-slide .text-base.text-white em {
+      color: #ffffff !important;
+    }
+    .game-slide .text-muted {
+      color: #8baeb8 !important;
+    }
+
+    /* brand text in tags */
+    .tag[style*="color:#21a7eb"] {
+      color: #21a7eb !important;
+      border-color: #1e3340 !important;
+    }
+
+    /* video modal close button */
+    .modal-backdrop .text-ink {
+      color: #ffffff !important;
+    }
+    .modal-backdrop .bg-raised {
+      background: #111b22 !important;
+    }
+    .modal-backdrop .border-hairline {
+      border-color: #1e3340 !important;
+    }
+    .modal-backdrop .hover\:border-brand\/60:hover {
+      border-color: rgba(33, 167, 235, 0.6) !important;
+    }
+
+    /* list modal title */
+    #listModalTitle {
+      color: #ffffff !important;
+    }
+  </style>
 </head>
-<style>
-  html {
-    scroll-behavior: smooth;
-  }
-</style>
+<body class="bg-base text-ink font-body antialiased">
 
-<body class="scroll-smooth">  
-    <section class="relative bg-white lg:grid lg:h-screen lg:place-content-center dark:bg-gray-900 overflow-hidden">
-  <!-- Background Image Shape -->
-<div
-  class="absolute inset-0 opacity-25"
-  style="
-    background-image: url('indexImgs/Blender.jpg');
-    background-size: cover;
-    background-position: center;
-    background-color: #111827;
+  <!-- Falling leaves effect layer (triggered by music toggle) -->
+  <div id="leafLayer" aria-hidden="true"></div>
 
-    /* Bottom-only fade */
-    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-">
-</div>
+  <!-- ============ SCRUB BAR NAV ============ -->
+  <div id="scrubbar">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8">
+      <div class="flex items-center justify-between h-14">
+        <a href="#hero" class="font-display font-bold text-sm tracking-tight text-white hover:text-brand transition-colors">
+          EPJ<span class="text-brand">.</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-8">
+          <button data-target="hero" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">00:00 INTRO</span>
+          </button>
+          <button data-target="game-dev" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">01:00 GAME DEV</span>
+          </button>
+          <button data-target="video-edits" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">02:00 EDITS</span>
+          </button>
+          <button data-target="art-3d" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">03:00 3D ART</span>
+          </button>
+          <button data-target="graphics" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">03:30 GRAPHICS</span>
+          </button>
+          <button data-target="arts" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">03:45 ARTS</span>
+          </button>
+          <button data-target="contact" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">04:00 CONTACT</span>
+          </button>
+          <button data-target="aboutme" class="tc-btn click-sound hover-sound flex items-center gap-2 group">
+            <span class="tc-dot"></span>
+            <span class="tc-label font-mono text-xs text-muted group-hover:text-white transition-colors">04:15 ABOUT</span>
+          </button>
+        </nav>
 
-<!-- Music Control Icon -->
-<div class="absolute top-6 left-6 z-10">
-  <div class="click-sound hover-sound relative w-10 h-10 cursor-pointer group" onclick="toggleAudio()">
-    <!-- Pulsing Disk -->
-    <svg id="disk" class="play-sfx w-10 h-10 text-blue-400 hover:text-cyan-600 transition-colors duration-300"
-      xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-      <path
-        d="M18.6216 3.21667c.2391.1897.3784.47817.3784.78334V15.6667c0 .0412-.0025.0818-.0073.1218.0048.0698.0073.1404.0073.2115 0 1.6569-1.3431 3-3 3s-3-1.3431-3-3 1.3431-3 3-3c.3506 0 .6872.0602 1 .1707V9.2602l-8 1.8667V18l-.00001.0032C8.99824 19.6586 7.65577 21 6 21c-1.65685 0-3-1.3431-3-3s1.34315-3 3-3c.35064 0 .68722.0602 1 .1707V6.33334c0-.46474.32018-.86823.77277-.97384l9.99953-2.33321c.1486-.03477.3012-.03465.4467-.00201.1427.03202.2783.09532.3964.18752.0021.00162.0041.00324.0062.00487Z" />
-    </svg>
-
-    <!-- Floating Notes -->
-    <div id="notes" class="absolute inset-0 pointer-events-none">
-      <span class="note">🎵</span>
-      <span class="note">🎶</span>
-      <span class="note">🎼</span>
+        <div class="flex items-center gap-3">
+          <div class="click-sound hover-sound relative w-9 h-9 cursor-pointer group flex items-center justify-center" onclick="toggleAudio()">
+            <svg id="disk" class="w-5 h-5 text-muted group-hover:text-brand transition-colors duration-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.6216 3.21667c.2391.1897.3784.47817.3784.78334V15.6667c0 .0412-.0025.0818-.0073.1218.0048.0698.0073.1404.0073.2115 0 1.6569-1.3431 3-3 3s-3-1.3431-3-3 1.3431-3 3-3c.3506 0 .6872.0602 1 .1707V9.2602l-8 1.8667V18l-.00001.0032C8.99824 19.6586 7.65577 21 6 21c-1.65685 0-3-1.3431-3-3s1.34315-3 3-3c.35064 0 .68722.0602 1 .1707V6.33334c0-.46474.32018-.86823.77277-.97384l9.99953-2.33321c.1486-.03477.3012-.03465.4467-.00201.1427.03202.2783.09532.3964.18752.0021.00162.0041.00324.0062.00487Z" />
+            </svg>
+            <audio id="audio1" loop>
+              <source src="sfx/gentle-fields-194622.mp3" type="audio/mpeg" />
+            </audio>
+            <audio id="audio2" loop>
+              <source src="sfx/soft-wind-318856.mp3" type="audio/mpeg" />
+            </audio>
+          </div>
+          <button id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Open menu" aria-expanded="false" class="click-sound md:hidden w-9 h-9 flex flex-col items-center justify-center gap-[5px] text-white">
+            <span id="menuBar1" class="block w-5 h-[2px] bg-current transition-transform duration-300"></span>
+            <span id="menuBar2" class="block w-5 h-[2px] bg-current transition-opacity duration-300"></span>
+            <span id="menuBar3" class="block w-5 h-[2px] bg-current transition-transform duration-300"></span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Hidden Audio -->
-    <audio id="audio1" loop>
-      <source src="sfx/gentle-fields-194622.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="audio2" loop>
-      <source src="sfx/soft-wind-318856.mp3" type="audio/mpeg">
-    </audio>
+    <nav id="mobileNav" class="md:hidden hidden border-t border-hairline bg-base/95">
+      <div class="max-w-6xl mx-auto px-5 sm:px-8 py-3 flex flex-col">
+        <button data-target="hero" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">00:00 INTRO</span>
+        </button>
+        <button data-target="game-dev" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">01:00 GAME DEV</span>
+        </button>
+        <button data-target="video-edits" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">02:00 EDITS</span>
+        </button>
+        <button data-target="art-3d" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">03:00 3D ART</span>
+        </button>
+        <button data-target="graphics" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">03:30 GRAPHICS</span>
+        </button>
+        <button data-target="arts" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">03:45 ARTS</span>
+        </button>
+        <button data-target="contact" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3 border-b border-hairline/60">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">04:00 CONTACT</span>
+        </button>
+        <button data-target="aboutme" class="tc-btn mobile-nav-btn click-sound hover-sound flex items-center gap-3 py-3">
+          <span class="tc-dot"></span>
+          <span class="tc-label font-mono text-xs text-muted">04:15 ABOUT</span>
+        </button>
+      </div>
+    </nav>
+    <div id="scrubtrack">
+      <div id="scrubfill"></div>
+      <div id="playhead"></div>
+    </div>
   </div>
-</div>
 
-<!-- Styles -->
-<style>
-  /* Heartbeat Animation */
-  .pulse {
-    animation: heartbeat 1.2s ease-in-out infinite;
-  }
+  <!-- ============ HERO ============ -->
+  <section id="hero" class="relative overflow-hidden border-b border-hairline">
+    <div class="absolute inset-0 opacity-[0.06]" style="background-image: radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0); background-size: 28px 28px;"></div>
+    <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-brand/10 blur-3xl"></div>
+    <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-sky/10 blur-3xl"></div>
 
-  @keyframes heartbeat {
-    0%, 100% {
-      transform: scale(1);
-    }
-    25% {
-      transform: scale(1.1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
-    75% {
-      transform: scale(1.1);
-    }
-  }
+    <div class="relative max-w-6xl mx-auto px-6 sm:px-8 py-24 sm:py-32 grid lg:grid-cols-[1.1fr_1fr] gap-14 items-center">
+      <div>
+        <p class="section-eyebrow font-mono text-xs uppercase mb-6">● REC — Portfolio Reel 2025</p>
+        <h1 class="font-display font-extrabold leading-[0.95] text-5xl sm:text-6xl lg:text-7xl text-white">
+          Showcasing my <span class="text-brand">creations</span>, frame by frame.
+        </h1>
+        <p class="mt-8 max-w-xl text-lg text-muted leading-relaxed">
+          I'm <strong class="text-white">Eric</strong> — a creative technologist working across
+          <strong class="text-white">video editing</strong>, <strong class="text-white">game development</strong>,
+          <strong class="text-white">3D art</strong>, and <strong class="text-white">web development</strong>.
+          This reel is a cut of the work I'm proudest of.
+        </p>
+        <div class="mt-10 flex flex-wrap gap-4">
+          <a href="#video-edits" class="click-sound hover-sound inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 font-semibold font-body text-white shadow-lg shadow-brand/20 hover:brightness-110 transition">
+            Press Play
+          </a>
+          <a href="#aboutme" class="click-sound hover-sound inline-flex items-center gap-2 rounded-lg border border-hairline px-6 py-3 font-semibold text-white hover:border-brand/60 hover:text-brand transition">
+            About Me
+          </a>
+        </div>
+      </div>
 
-  /* Notes base style */
-.note {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.25rem;
-  color: #60a5fa; /* Tailwind's blue-400 */
-  opacity: 0;
-  pointer-events: auto;
-}
+      <div class="relative">
+        <div class="vf-corner top-0 left-0 border-t-2 border-l-2"></div>
+        <div class="vf-corner top-0 right-0 border-t-2 border-r-2"></div>
+        <div class="vf-corner bottom-0 left-0 border-b-2 border-l-2"></div>
+        <div class="vf-corner bottom-0 right-0 border-b-2 border-r-2"></div>
 
-/* Active floating animation */
-.note-active {
-  animation: floatNote 2s ease-in-out infinite;
-  opacity: 1;
-}
+        <div class="relative rounded-xl overflow-hidden border border-hairline bg-raised aspect-video">
+          <!-- Intro reel intentionally left empty for now. -->
+        </div>
+      </div>
+    </div>
+  </section>
 
-.note:hover {
-  color: #06b6d4; /* Tailwind's cyan-600 */
-}
+  <!-- ============ GAME DEV (TOGGLED LAYOUT) ============ -->
+  <section id="game-dev" class="py-24 sm:py-32 border-b border-hairline relative overflow-hidden">
+    <div class="absolute -top-40 right-0 w-[30rem] h-[30rem] rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+      <div class="flex items-start justify-between flex-wrap gap-4 mb-16">
+        <div>
+          <p class="section-eyebrow font-mono text-xs uppercase mb-3">01:00 — Build Log</p>
+          <h2 class="font-display font-bold text-4xl sm:text-5xl text-white">Game Dev Projects</h2>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <button onclick="switchGame(-1)" aria-label="Previous game project" class="click-sound hover-sound w-11 h-11 flex items-center justify-center rounded-lg border border-hairline text-white hover:border-brand hover:text-brand transition">
+            ◀
+          </button>
+          <button onclick="switchGame(1)" aria-label="Next game project" class="click-sound hover-sound w-11 h-11 flex items-center justify-center rounded-lg border border-hairline text-white hover:border-brand hover:text-brand transition">
+            ▶
+          </button>
+        </div>
+      </div>
 
-.note:nth-child(1) {
-  animation-delay: 0s;
-}
-.note:nth-child(2) {
-  animation-delay: 0.6s;
-}
-.note:nth-child(3) {
-  animation-delay: 1.2s;
-}
+      <div class="relative">
+        <div id="gameSlides" class="game-slide-container">
+          <!-- Slides rendered by JS -->
+        </div>
 
-@keyframes floatNote {
-  0% {
-    transform: translate(-50%, 0);
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -60px);
-    opacity: 0;
-  }
-}
+        <div id="gameDots" class="flex justify-center gap-2 mt-8"></div>
+      </div>
+    </div>
+  </section>
 
-</style>
+  <!-- ============ VIDEO EDITS ============ -->
+  <section id="video-edits" class="py-24 sm:py-32 border-b border-hairline">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">02:00 — Timeline</p>
+      <h2 class="font-display font-bold text-4xl sm:text-5xl mb-16 text-white">Video Edits</h2>
 
-<!-- JavaScript -->
-<script>
-  const disk = document.getElementById('disk');
-  const notes = document.querySelectorAll('.note');
-  const audio1 = document.getElementById('audio1');
-  const audio2 = document.getElementById('audio2');
+      <div class="mb-24">
+        <div class="flex items-end justify-between mb-8 flex-wrap gap-4">
+          <h3 class="font-display font-semibold text-2xl text-white">🎬 Personal Edits</h3>
+          <button onclick="openListModal('personal')" class="click-sound hover-sound font-mono text-xs text-brand hover:underline">SHOW MORE →</button>
+        </div>
+        <div id="personal-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+      </div>
 
-  // Volume settings
-  audio1.volume = 1;
-  audio2.volume = 1;
+      <div class="mb-24">
+        <div class="flex items-end justify-between mb-8 flex-wrap gap-4">
+          <h3 class="font-display font-semibold text-2xl text-white">🎓 School Edits</h3>
+          <button onclick="openListModal('school')" class="click-sound hover-sound font-mono text-xs text-brand hover:underline">SHOW MORE →</button>
+        </div>
+        <div id="school-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+      </div>
 
-  let isPlaying = false;
-  let loopMonitor1, loopMonitor2;
+      <div>
+        <h3 class="font-display font-semibold text-2xl text-white mb-8">📢 Promotional Edits</h3>
+        <div id="promo-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+      </div>
+    </div>
+  </section>
 
-  function toggleAudio() {
-    const unlockAudio = () => {
-      return Promise.all([
-        audio1.play().then(() => audio1.pause()).catch(() => {}),
-        audio2.play().then(() => audio2.pause()).catch(() => {})
-      ]);
-    };
+  <!-- ============ 3D MODELING (SMOOTH CAROUSEL) ============ -->
+  <section id="art-3d" class="py-24 sm:py-32 border-b border-hairline relative overflow-hidden">
+    <div class="absolute -bottom-40 left-0 w-[30rem] h-[30rem] rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">03:00 — Render Pass</p>
+      <h2 class="font-display font-bold text-4xl sm:text-5xl mb-6 text-white">3D Modeling Projects</h2>
 
-    unlockAudio().then(() => {
-      isPlaying = !isPlaying;
+      <div class="relative">
+        <div id="carouselContainer" class="carousel-container flex gap-6 pb-4 pt-2">
+          <!-- Rendered by JS -->
+        </div>
+        <button onclick="scrollCarousel(-1)" class="carousel-btn absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-10 h-10 rounded-full flex items-center justify-center text-white text-xl z-10 hover:scale-110 transition">◀</button>
+        <button onclick="scrollCarousel(1)" class="carousel-btn absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-10 h-10 rounded-full flex items-center justify-center text-white text-xl z-10 hover:scale-110 transition">▶</button>
+      </div>
+      <div id="carouselDots" class="flex justify-center gap-2 mt-6"></div>
+    </div>
+  </section>
 
-      if (isPlaying) {
-        disk.classList.add('pulse');
-        notes.forEach(note => note.classList.add('note-active'));
-        startLoopingAudio(audio1, 2); // fade out 2 seconds before end
-        startLoopingAudio(audio2, 2);
-      } else {
-        disk.classList.remove('pulse');
-        notes.forEach(note => note.classList.remove('note-active'));
-        stopLoopingAudio(audio1);
-        stopLoopingAudio(audio2);
-      }
-    });
-  }
+  <!-- ============ GRAPHICS SECTION ============ -->
+  <section id="graphics" class="py-24 sm:py-32 border-b border-hairline relative overflow-hidden">
+    <div class="absolute -top-40 right-0 w-[30rem] h-[30rem] rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">03:30 — Design</p>
+      <h2 class="font-display font-bold text-4xl sm:text-5xl mb-8 text-white">Graphics</h2>
+      <div id="graphicsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"></div>
+      <h3 class="font-display font-semibold text-2xl mt-16 mb-8 text-white">Logos</h3>
+      <div id="logosGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"></div>
+    </div>
+  </section>
 
-  function startLoopingAudio(audio, fadeSecondsBeforeEnd = 2) {
-    audio.volume = 0;
-    audio.currentTime = 0;
-    audio.play();
-    fadeInAudio(audio);
+  <!-- ============ ARTS SECTION ============ -->
+  <section id="arts" class="py-24 sm:py-32 border-b border-hairline relative overflow-hidden">
+    <div class="absolute -bottom-40 left-0 w-[30rem] h-[30rem] rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">03:45 — Gallery</p>
+      <h2 class="font-display font-bold text-4xl sm:text-5xl mb-16 text-white">Arts</h2>
+      <div id="artsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"></div>
+    </div>
+  </section>
 
-    const duration = audio.duration || 30; // fallback if not loaded
-
-    const monitor = setInterval(() => {
-      if (!isPlaying) return;
-
-      const timeLeft = audio.duration - audio.currentTime;
-      if (timeLeft <= fadeSecondsBeforeEnd) {
-        clearInterval(monitor);
-        fadeOutAudio(audio, () => {
-          audio.currentTime = 0;
-          audio.play();
-          fadeInAudio(audio);
-          // Restart monitoring
-          startLoopingAudio(audio, fadeSecondsBeforeEnd);
-        });
-      }
-    }, 200);
-
-    // Save monitor so we can clear it later
-    if (audio === audio1) loopMonitor1 = monitor;
-    if (audio === audio2) loopMonitor2 = monitor;
-  }
-
-  function stopLoopingAudio(audio) {
-    if (audio === audio1 && loopMonitor1) clearInterval(loopMonitor1);
-    if (audio === audio2 && loopMonitor2) clearInterval(loopMonitor2);
-
-    fadeOutAudio(audio, () => {
-      audio.pause();
-      audio.currentTime = 0;
-    });
-  }
-
-  function fadeOutAudio(audio, callback) {
-    const fadeStep = 0.05;
-    const fadeInterval = setInterval(() => {
-      if (audio.volume > fadeStep) {
-        audio.volume -= fadeStep;
-      } else {
-        audio.volume = 0;
-        clearInterval(fadeInterval);
-        if (callback) callback();
-      }
-    }, 50);
-  }
-
-  function fadeInAudio(audio) {
-    const fadeStep = 0.05;
-    const fadeInterval = setInterval(() => {
-      if (audio.volume < 1 - fadeStep) {
-        audio.volume += fadeStep;
-      } else {
-        audio.volume = 1;
-        clearInterval(fadeInterval);
-      }
-    }, 50);
-  }
-
-  // Pause for modal
-  function pauseBackgroundAudio() {
-    if (isPlaying) {
-      stopLoopingAudio(audio1);
-      stopLoopingAudio(audio2);
-    }
-  }
-
-  // Resume for modal
-  function resumeBackgroundAudio() {
-    if (isPlaying) {
-      startLoopingAudio(audio1, 2);
-      startLoopingAudio(audio2, 2);
-    }
-  }
-</script>
-
-
-
-
-
-
-
-
-
-
-
-  <div class="relative mx-auto w-screen max-w-screen-xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-    <div class="mx-auto max-w-prose text-center">
-      <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl dark:text-white">
-        Showcasing my <span class="text-cyan-400 font-extrabold">Creations</span>
-      </h1>
-
-      <p class="mt-4 text-lg text-gray-700 dark:text-gray-300">
-        Hi there! I'm <strong>Eric</strong>, a creative technologist passionate about bringing ideas to life through
-        <strong>video editing</strong>, <strong>game development</strong>, <strong>3D art</strong>, and <strong>web development</strong>.
-        This portfolio is a collection of my favorite works where creativity meets technical skill to craft engaging visuals and interactive experiences.
+  <!-- ============ CONTACT & DOWNLOADS ============ -->
+  <section id="contact" class="py-24 sm:py-32 border-b border-hairline relative overflow-hidden">
+    <div class="absolute -top-40 right-0 w-[30rem] h-[30rem] rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">04:00 — Get In Touch</p>
+      <h2 class="font-display font-bold text-4xl sm:text-5xl mb-6 text-white">Contact &amp; Downloads</h2>
+      <p class="text-muted leading-relaxed max-w-2xl mb-12">
+        Want to work together or just say hi? Grab a copy of my CV or Resume, or send me a message directly.
       </p>
 
-      <div class="mt-4 flex justify-center gap-4 sm:mt-6">
-        <a
-        class="click-sound hover-sound inline-block rounded border border-cyan-600 bg-cyan-600 px-5 py-3 font-medium text-white shadow-sm transition-colors hover:bg-cyan-700"
-        href="#Start"
-      >
-        Get to Know Me
-      </a>
+      <div class="grid sm:grid-cols-3 gap-6">
+        <a href="Eric_Jorbina_CV.pdf" download class="click-sound hover-sound card-hover group flex flex-col items-start gap-4 rounded-xl border border-hairline bg-raised p-6">
+          <span class="w-11 h-11 rounded-lg bg-brand/10 flex items-center justify-center text-brand text-xl">📄</span>
+          <div>
+            <h3 class="font-display font-semibold text-lg text-white">Download CV</h3>
+            <p class="mt-1 text-sm text-muted">Full background &amp; project history</p>
+          </div>
+          <span class="mt-auto font-mono text-xs text-brand group-hover:underline">GET PDF →</span>
+        </a>
 
+        <a href="Eric_Jorbina_Resume.pdf" download class="click-sound hover-sound card-hover group flex flex-col items-start gap-4 rounded-xl border border-hairline bg-raised p-6">
+          <span class="w-11 h-11 rounded-lg bg-brand/10 flex items-center justify-center text-brand text-xl">📋</span>
+          <div>
+            <h3 class="font-display font-semibold text-lg text-white">Download Resume</h3>
+            <p class="mt-1 text-sm text-muted">A quick one-page summary</p>
+          </div>
+          <span class="mt-auto font-mono text-xs text-brand group-hover:underline">GET PDF →</span>
+        </a>
 
-        <a
-          class="click-sound hover-sound  inline-block rounded border border-cyan-300 px-5 py-3 font-medium text-cyan-700 shadow-sm transition-colors hover:bg-cyan-50 hover:text-cyan-900 dark:border-cyan-700 dark:text-cyan-300 dark:hover:bg-cyan-800 dark:hover:text-white"
-          href="#aboutme"
-        >
-          About Me
+        <a href="mailto:jorbinaeric@gmail.com?subject=Let's%20work%20together" class="click-sound hover-sound card-hover group flex flex-col items-start gap-4 rounded-xl border border-hairline bg-brand/10 p-6">
+          <span class="w-11 h-11 rounded-lg bg-brand/10 flex items-center justify-center text-brand text-xl">✉️</span>
+          <div>
+            <h3 class="font-display font-semibold text-lg text-white">Send Me an Email</h3>
+            <p class="mt-1 text-sm text-muted">Opens your default mail app</p>
+          </div>
+          <span class="mt-auto font-mono text-xs text-brand group-hover:underline">jorbinaeric@gmail.com →</span>
         </a>
       </div>
     </div>
+  </section>
+
+  <!-- ============ ABOUT / FOOTER ============ -->
+  <footer id="aboutme" class="pt-24 pb-12">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <p class="section-eyebrow font-mono text-xs uppercase mb-3">04:15 — Credits</p>
+      <div class="flex flex-col md:flex-row items-start gap-10">
+        <img src="indexImgs/Me.png" alt="Eric Jorbina" class="w-32 h-32 rounded-full border border-hairline shrink-0 object-cover ml-4 md:ml-8" />
+        <div class="flex-1">
+          <h3 class="font-display font-semibold text-2xl mb-4 text-white">👋 About Me</h3>
+          <p class="text-muted leading-relaxed mb-6 max-w-2xl">
+            Hi! I'm <strong class="text-white">Eric P. Jorbina Jr.</strong>, a Fellowship Baptist College graduate with a strong passion for
+            video editing, 3D modeling, and game development. I'm eager to apply my IT skills in a professional environment and keep growing within the tech industry.
+            This site was designed and coded by me to showcase my personal projects and creative work.
+          </p>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 font-mono text-sm">
+            <p><span class="text-muted">EMAIL</span> —
+              <a href="mailto:jorbinaeric@gmail.com" class="click-sound hover-sound text-brand hover:underline">jorbinaeric@gmail.com</a>
+            </p>
+            <p><span class="text-muted">LINKEDIN</span> —
+              <a href="https://www.linkedin.com/in/eric-jorbina-a083a1349" target="_blank" class="click-sound hover-sound text-brand hover:underline break-all">/in/eric-jorbina-a083a1349</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-16 pt-8 border-t border-hairline text-sm text-muted font-mono">
+        <p>🎵 I do not own any of the music used in the showcased videos. All audio belongs to its respective owners and is used solely for personal, non-commercial purposes.</p>
+        <p class="mt-3">© 2025 Eric Jorbina Jr. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="hidden click-sound hover-sound fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-brand text-white shadow-lg shadow-brand/30 hover:brightness-110 transition flex items-center justify-center font-bold">
+    ↑
+  </button>
+
+  <button id="floatingMusicBtn" onclick="toggleAudio()" aria-label="Toggle background music" class="hidden click-sound hover-sound fixed bottom-6 left-6 z-50 w-11 h-11 rounded-full bg-raised border border-hairline shadow-lg shadow-black/30 hover:border-brand/60 transition flex items-center justify-center">
+    <svg id="diskFloat" class="w-5 h-5 text-brand" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M18.6216 3.21667c.2391.1897.3784.47817.3784.78334V15.6667c0 .0412-.0025.0818-.0073.1218.0048.0698.0073.1404.0073.2115 0 1.6569-1.3431 3-3 3s-3-1.3431-3-3 1.3431-3 3-3c.3506 0 .6872.0602 1 .1707V9.2602l-8 1.8667V18l-.00001.0032C8.99824 19.6586 7.65577 21 6 21c-1.65685 0-3-1.3431-3-3s1.34315-3 3-3c.35064 0 .68722.0602 1 .1707V6.33334c0-.46474.32018-.86823.77277-.97384l9.99953-2.33321c.1486-.03477.3012-.03465.4467-.00201.1427.03202.2783.09532.3964.18752.0021.00162.0041.00324.0062.00487Z" />
+    </svg>
+  </button>
+
+  <!-- ============================= MODALS ============================= -->
+
+  <div id="videoModal" class="fixed inset-0 modal-backdrop z-[60] hidden items-center justify-center p-4">
+    <button onclick="closeModal()" class="click-sound absolute top-5 right-6 w-10 h-10 flex items-center justify-center text-white text-2xl bg-raised rounded-md border border-hairline hover:border-brand/60 transition">&times;</button>
+    <div class="w-full max-w-4xl">
+      <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-hairline">
+        <iframe id="videoFrame" class="absolute inset-0 w-full h-full" allowfullscreen></iframe>
+      </div>
+    </div>
   </div>
-</section>
-<!-- Video Section -->
 
-<section id="Start" class="bg-white dark:bg-gray-900">
-  <div class="container px-6 py-16 mx-auto">
-    <!-- Main Title -->
-    <h1 class="text-5xl font-extrabold text-center mb-20 text-gray-900 dark:text-white drop-shadow-md">
-      Video Edits
-    </h1>
-
-   <div class="mb-24">
-  <!-- Flex container for title and button -->
-  <div class="flex items-center justify-between mb-10">
-    <h2 class="text-3xl font-semibold text-gray-800 dark:text-white drop-shadow-sm">
-      🎬 Personal Edits
-    </h2>
-    <button onclick="showMoreModal()" class="hover-sound click-sound text-cyan-400 hover:underline transition cursor-pointer text-base">
-      Show More →
-    </button>
+  <div id="listModal" class="fixed inset-0 modal-backdrop z-50 hidden overflow-y-auto px-4 py-12">
+    <div class="relative mx-auto w-full max-w-6xl bg-raised border border-hairline rounded-xl p-8">
+      <button onclick="closeListModal()" class="click-sound absolute top-4 right-5 w-10 h-10 flex items-center justify-center text-white text-2xl bg-raised2 rounded-md border border-hairline hover:border-brand/60 transition">&times;</button>
+      <h3 id="listModalTitle" class="font-display font-semibold text-2xl mb-8 text-center text-white"></h3>
+      <div id="listModalGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </div>
   </div>
-  <!-- Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
-      
-        <!-- Video 1 -->
-        <div onclick="openModal('19dBw0zMvvuDleZUkz9oM8-TB-SnYSen2')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-            <div class="relative">
-              <img src="vThumnail/minecrfttrailer.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
 
-              <div class="absolute inset-0 flex items-center justify-center">
-                <div class="bg-black/50 rounded-full p-4">
-                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
+  <div id="imageModal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-4xl mx-auto flex items-center justify-center">
+      <button onclick="prevConceptImage()" class="click-sound hover-sound absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">◀</button>
+      <button onclick="nextConceptImage()" class="click-sound hover-sound absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">▶</button>
+      <button onclick="closeImageModal()" class="click-sound absolute -top-2 right-8 sm:right-0 text-white text-xl w-9 h-9 bg-raised border border-hairline rounded-md hover:border-brand/60 z-50">&times;</button>
+      <div class="w-full bg-raised border border-hairline rounded-xl p-6 flex flex-col items-center">
+        <img id="modalImage" src="" alt="Concept Art" class="fade-img max-h-[70vh] object-contain rounded-lg opacity-100 scale-100" />
+        <p id="modalCaption" class="mt-4 text-sm text-muted font-mono text-center"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameDevImageModal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-4xl mx-auto flex items-center justify-center">
+      <button onclick="closeGameDevImageModal()" class="click-sound absolute -top-2 right-0 text-white text-xl w-9 h-9 bg-raised border border-hairline rounded-md hover:border-brand/60 z-50">&times;</button>
+      <div class="w-full bg-raised border border-hairline rounded-xl p-6 flex flex-col items-center">
+        <img id="gameDevModalImage" src="" alt="Game Dev Media" class="fade-img max-h-[70vh] object-contain rounded-lg opacity-100 scale-100" />
+        <p id="gameDevModalCaption" class="mt-4 text-sm text-muted font-mono text-center"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="localVideoModal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-4xl mx-auto bg-black rounded-xl overflow-hidden border border-hairline">
+      <button onclick="closeLocalVideoModal()" class="click-sound hover-sound absolute top-3 right-3 text-white text-xl w-10 h-10 bg-black/50 border border-hairline rounded-md hover:border-brand/60 z-10">✕</button>
+      <video id="localModalVideo" controls autoplay class="w-full h-auto max-h-[75vh]">
+        <source src="" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <div id="modelingModal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4">
+    <div class="relative w-full max-w-4xl mx-auto flex items-center justify-center">
+      <button onclick="prevModelingImage()" class="click-sound hover-sound absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">◀</button>
+      <button onclick="nextModelingImage()" class="click-sound hover-sound absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">▶</button>
+      <div class="w-full bg-raised border border-hairline rounded-xl p-6 flex justify-center items-center relative">
+        <button onclick="closeModelingModal()" class="click-sound absolute top-3 right-3 text-white text-xl w-9 h-9 bg-raised2 border border-hairline rounded-md hover:border-brand/60 z-50">&times;</button>
+        <img id="modelingModalImage" src="" alt="3D Project" class="fade-img max-h-[80vh] object-contain rounded-lg opacity-100 scale-100" />
+      </div>
+    </div>
+  </div>
+
+  <div id="artModal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-0">
+    <div class="relative w-full h-full mx-auto flex items-center justify-center">
+      <button onclick="prevArtImage()" class="click-sound hover-sound absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">◀</button>
+      <button onclick="nextArtImage()" class="click-sound hover-sound absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 bg-raised border border-hairline text-white rounded-full w-11 h-11 flex items-center justify-center hover:border-brand/60 z-50">▶</button>
+      <div class="w-full h-full bg-black p-6 sm:p-10 flex justify-center items-center relative">
+        <button onclick="closeArtModal()" class="click-sound absolute top-3 right-3 text-white text-xl w-9 h-9 bg-raised2 border border-hairline rounded-md hover:border-brand/60 z-50">&times;</button>
+        <img id="artModalImage" src="" alt="Art" class="fade-img max-w-full max-h-full object-contain rounded-lg opacity-100 scale-100" />
+        <p id="artModalCaption" class="absolute bottom-4 left-0 right-0 text-center text-sm text-muted font-mono pointer-events-none"></p>
+      </div>
+    </div>
+  </div>
+
+  <audio id="hoverSound" preload="auto">
+    <source src="sfx/ui-sounds-pack-3-9-359722.mp3" type="audio/mpeg" />
+  </audio>
+  <audio id="clickSound" preload="auto">
+    <source src="sfx/ui-sounds-pack-3-18-359720.mp3" type="audio/mpeg" />
+  </audio>
+  <audio id="closeSound" preload="auto">
+    <source src="sfx/ui-sounds-pack-4-6-359744.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    /* ============================================================
+       DATA
+       ============================================================ */
+    const personalEdits = [
+      { drive: "10grvtVIAQVrJIQxsPSiHXyOcFWGAy8Lu", title: "A Minecraft Trailer", desc: "A quick and fun edit that I did with my friends.", tools: ["Premiere Pro", "Minecraft"], thumb: "vThumnail/minecrfttrailer.png" },
+      { drive: "1L_jVF0VXHXvWK-lt35PBh0zIWadNjxLN", title: "Revenge", desc: "I made this for fun, talking about taking revenge on my friend.", tools: ["Premiere Pro", "After Effects"], thumb: "vThumnail/revenge.png" },
+      { drive: "1B-XbEY3FbXKexNr0_xQQ2kL6VXjnZRXx", title: "Founders Week Vlog", desc: "Edited after Founders Week at Fellowship Baptist College — full of fun and exciting moments.", tools: ["Premiere Pro"], thumb: "vThumnail/bestweek.png" },
+    ];
+    const personalEditsMore = [
+      { drive: "1uU_YjQUaqVfB9R5InzXi2Ct9jKRFTcoF", title: "See You Nerds", desc: "An emotional and nostalgic goodbye to our old group from way back.", tools: ["Premiere Pro"], thumb: "vThumnail/nerds.png" },
+      { drive: "15gWT7l48sPdDtPykuRZ4QEg6c8swknSN", title: "Boo", desc: "A fun edit with me trying out 3D animation.", tools: ["Premiere Pro", "Blender"], thumb: "vThumnail/boo.png" },
+      { drive: "1HtV7h9cQslCkKGGOYUaBPsO6q7opcgnV", title: "Golden Fredbear", desc: "Second part of Boo.", tools: ["Premiere Pro", "Blender"], thumb: "vThumnail/golden.png" },
+      { drive: "1jMdtUDZvYhSEQ9fhDK066gT2GwR9Ap8V", title: "Grade 11 Music Video", desc: "A cute, nostalgic music video of my grade 11 life.", tools: ["Premiere Pro"], thumb: "vThumnail/grade11.png" },
+    ];
+
+    const schoolEdits = [
+      { drive: "1axR6LXX7ax73L7hHlp2hBRG2PDbOxLvD", title: "Music Video w/ Classmates", desc: "A fun music video project representing how energetic we are as BSIT students of Fellowship Baptist College.", tools: ["Premiere Pro"], thumb: "vThumnail/goodtime.png" },
+      { drive: "1VxgApvFTuwTJBOogCPAo4IpOeblYvws_", title: "I Am World", desc: "A short film made with a friend, inspired by 'The Egg' by Andy Weir.", tools: ["Premiere Pro", "After Effects"], thumb: "vThumnail/iamw.png" },
+      { drive: "1CQ1-KMgV82TsBeg9FkEspFYI4Xg0bUds", title: "From Nowhere Teaser", desc: "A teaser video for my capstone game project, 'From Nowhere'.", tools: ["Premiere Pro", "Unity"], thumb: "vThumnail/fnw.png" },
+    ];
+    const schoolEditsMore = [
+      { drive: "1NuRMGI96_EPicgnOf8YQAvWqT2tRxyXD", title: "Day Vlog", desc: "A project showcasing what we do in a day of our life.", tools: ["Premiere Pro"], thumb: "vThumnail/vlogme.png" },
+      { drive: "1Y3CJRHolt_1h5iXJemPgDUB7mpZi5d8d", title: "Cebu–Bohol Trip Vlog", desc: "A recent vlog from our educational tour of Cebu and Bohol.", tools: ["Premiere Pro"], thumb: "vThumnail/cebu.png" },
+    ];
+
+    const promoEdits = [
+      { drive: "1SBoH6OfsJNGUZ8L9IImQFx43_0AhA95F", title: "Enrollment Video for FBC", desc: "I was tasked to create an enrollment video for the school.", tools: ["Premiere Pro", "After Effects"], thumb: "vThumnail/enroll.png" },
+      { drive: "17-vCpQFPkcV0f-t9czCFdJOV73z4ktUP", title: "Client Promotional Video", desc: "Edited for a client during my OJT at Precoce Technologies. Live at ", link: "https://www.topfinancialagency.com", tools: ["Canva"], thumb: "vThumnail/ad.png" },
+    ];
+
+    // ---- GAME DEV DATA ----
+    const fromNowhere = {
+      title: "From Nowhere",
+      tags: ["CAPSTONE PROJECT"],
+      itchEmbed: "https://itch.io/embed/4317406?bg_color=0a1114&fg_color=ffffff",
+      trailerEmbed: "https://www.youtube-nocookie.com/embed/tjcsodgd5CY?rel=0",
+      description: `<strong>From Nowhere</strong> is a narrative-driven indie game about unraveling a mysterious house that blurs the lines between memory and reality. As the protagonist wakes from a nightmare tasked with finding out why the house is calling him, players explore dreamlike landscapes, interact with strange entities, and solve puzzles to discover who they are and what brought them to this place — a story about self-identity, trauma, and redemption set in a surreal universe.`,
+      image: "GameDev/FromNowhere/animated/IMG_0437.gif",
+      conceptSectionTitle: "🎨 Concept Arts",
+      mediaSectionTitle: "🛠️ Development",
+      team: [
+        { name: "Eric Jorbina Jr.", role: "Game Designer / Programmer" },
+        { name: "Jim Tamson", role: "Storytelling / Documentation" },
+        { name: "Kenth Jarred Pilares", role: "3D Modeler / Artist" }
+      ],
+      conceptArts: [
+        { src: "GameDev/FromNowhere/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
+        { src: "GameDev/FromNowhere/ConceptArt/IMG_0108.jpg", author: "by Kenth Jarred Pilares" },
+        { src: "GameDev/FromNowhere/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Jim Tamson" },
+      ],
+      mediaItems: [
+        { type: "image", src: "GameDev/FromNowhere/GameProgress/457882625_1080195720488037_4061530265910010825_n.png", caption: "Game Progress" },
+        { type: "video", src: "GameDev/FromNowhere/GameProgress/2024-07-20 21-42-23.mp4", caption: "Gameplay Testing", poster: "GameDev/FromNowhere/FrownowwhereFInal.png" },
+        { type: "video", src: "GameDev/FromNowhere/GameProgress/484837993_9486038654772968_3589704999883936394_n.mp4", caption: "Early Level State", poster: "GameDev/FromNowhere/animated/IMG_0437.gif" },
+      ]
+    };
+
+    const theHunted = {
+      title: "The Hunted",
+      tags: ["BULLET HEAVEN", "SURVIVAL"],
+      itchEmbed: "https://itch.io/embed/4470053?bg_color=0a1114&fg_color=ffffff",
+      trailerEmbed: "https://www.youtube-nocookie.com/embed/GFfGe2EfOds?rel=0",
+      description: `<em>Survive the night… or become one of them.</em><br><br>A fast-paced, Vampire Survivors-inspired survival game where your only goal is simple: <strong>Stay alive for 15 minutes and beat the Final Boss.</strong> But it's never that easy.<br><br>Fight off endless waves of enemies as they swarm from every direction. The longer you survive, the stronger they become… but so do you. Level up, choose your upgrades, and build your own overpowered setup.<br><br><strong>Summon Companions</strong> — Unlock and upgrade companions that fight alongside you, attack enemies automatically, and scale in power as you level them up.<br><br><strong>Coming soon to the Google Play Store.</strong>`,
+      image: "GameDev/TheHunted/gameicon2.png",
+      conceptSectionTitle: "🎮 Gameplay Scenes",
+      mediaSectionTitle: "🛠️ Development Videos / Pictures",
+      team: [
+        { name: "Eric Jorbina Jr.", role: "Game Designer / Programmer" },
+        { name: "Jerich Tabligan", role: "Game Director / Main Asset Artist" }
+      ],
+      conceptArts: [
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot_20260701-201615.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot_20260701-201608.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot_20260701-200712.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot_20260701-200705.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot 2026-07-01 at 10.59.00 PM.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot 2026-07-01 at 11.05.53 PM.png", author: "Gameplay Scene" },
+        { src: "GameDev/TheHunted/GameIMGS/Screenshot_20260701-201336.png", author: "Gameplay Scene" },
+      ],
+      mediaItems: [
+        { type: "youtube", src: "https://www.youtube-nocookie.com/embed/Nf-GldTaP8U?rel=0", caption: "Development Short 1 — Edited by me" },
+        { type: "youtube", src: "https://www.youtube-nocookie.com/embed/4fUY0LrJcVM?rel=0", caption: "Development Short 2 — Edited by me" },
+      ]
+    };
+
+    const gameProjects = [fromNowhere, theHunted];
+
+    // ---- 3D MODELS ----
+    const models3d = [
+      { title: "Anime Stylized Scene", description: "A custom anime-style 3D render with Photoshop grass and Blender-made clouds and stars.", image: "3DModels/CINEMA.png" },
+      { title: "Early Morning", description: "My first 3D render.", image: "3DModels/EarlyMorning.png" },
+      { title: "From Nowhere Final Poster", description: "The final lit version of the From Nowhere concept.", image: "3DModels/finishedversfnw.jpg" },
+      { title: "Star / Sun", description: "A star using a mix of different lighting types.", image: "3DModels/star.jpg" },
+      { title: "From Nowhere Poster", description: "A 3D model concept for our game From Nowhere.", image: "3DModels/Blenderfnw.png" },
+      { title: "3D Buildings", description: "Practicing a Blender plugin for architecture.", image: "3DModels/Buildings.jpg" },
+      { title: "Dog", description: "Practice for testing animation for the dog in our game.", image: "3DModels/dog.jpg" },
+      { title: "Golden Freddy", description: "A found model I animated and added to a video.", image: "3DModels/fnafanim.jpg" },
+      { title: "Fuse Box", description: "3D model of a fuse box for our game From Nowhere.", image: "3DModels/fusebox.png" },
+    ];
+
+    // ---- GRAPHICS & ARTS ----
+    const graphicsItems = [
+      { src: "MoodBoardsimg/Moodboard.jpg", title: "Moodboard" },
+      { src: "MoodBoardsimg/Moodboard1.jpg", title: "Moodboard One" },
+      { src: "MoodBoardsimg/Moodboard2.jpg", title: "Moodboard Two" },
+      { src: "MoodBoardsimg/JorbinaT-shirtLoggo.jpeg", title: "Jorbina T-Shirt Logo" },
+      { src: "MoodBoardsimg/BdayCard.jpeg", title: "Birthday Card" },
+    ];
+    const logoItems = [
+      { src: "MoodBoardsimg/Logos/icon.png", title: "Icon" },
+      { src: "MoodBoardsimg/Logos/logo no BG.png", title: "Logo" },
+      { src: "MoodBoardsimg/Logos/HigherQualtitle.png", title: "Higher Quality Title" },
+    ];
+    const artsItems = [
+      { src: "Arts/Kaguya.png", title: "Kaguya" },
+      { src: "Arts/Return.png", title: "Return" },
+      { src: "Arts/leftbehindV2.png", title: "Left Behind" },
+      { src: "Arts/Totoro(Final).png", title: "Totoro" },
+      { src: "Arts/sunnyy.png", title: "Sunny" },
+      { src: "Arts/Hidden_place.png", title: "Hidden Place" },
+      { src: "Arts/merry go round.png", title: "Merry-Go-Round" },
+      { src: "Arts/you and me final.png", title: "You and Me" },
+      { src: "Arts/Nightwithsign.png", title: "Night with Sign" },
+      { src: "Arts/Painting(i guess).png", title: "Painting" },
+      { src: "Arts/Tranquility.png", title: "Tranquility" },
+    ];
+
+    /* ============================================================
+       VIDEO CARD RENDERING
+       ============================================================ */
+    function playIcon(size = 10) {
+      return `<svg class="w-${size} h-${size} text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+    }
+
+    function videoCard(v, small = false) {
+      const titleSize = small ? "text-lg" : "text-xl";
+      const descSize = small ? "text-sm" : "text-base";
+      const desc = v.link ?
+        `${v.desc}<a href="${v.link}" target="_blank" onclick="event.stopPropagation()" class="text-brand underline hover:text-brand/80 ml-1">${v.link.replace('https://','')}</a>` :
+        v.desc;
+      return `
+        <div onclick="openModal('${v.drive}')" class="hover-sound click-sound card-hover group cursor-pointer">
+          <div class="relative rounded-xl overflow-hidden border border-hairline sprocket">
+            <img src="${v.thumb}" class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none" alt="${v.title}" loading="lazy" decoding="async">
+            <div class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition-colors">
+              <div class="bg-black/60 rounded-full p-3 border border-white/10">${playIcon(small?7:8)}</div>
+            </div>
+          </div>
+          <div class="pt-4">
+            <h4 class="${titleSize} font-display font-semibold text-brand">${v.title}</h4>
+            <p class="mt-2 ${descSize} text-muted leading-snug">${desc}</p>
+            <div class="mt-3 flex flex-wrap gap-2">${v.tools.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('personal-grid').innerHTML = personalEdits.map(v => videoCard(v)).join('');
+    document.getElementById('school-grid').innerHTML = schoolEdits.map(v => videoCard(v)).join('');
+    document.getElementById('promo-grid').innerHTML = promoEdits.map(v => videoCard(v)).join('');
+
+    function openListModal(which) {
+      const data = which === 'personal' ? personalEditsMore : schoolEditsMore;
+      const title = which === 'personal' ? 'More Personal Edits' : 'More School Edits';
+      document.getElementById('listModalTitle').textContent = title;
+      document.getElementById('listModalGrid').innerHTML = data.map(v => videoCard(v, true)).join('');
+      const modal = document.getElementById('listModal');
+      modal.classList.remove('hidden');
+    }
+
+    function closeListModal() {
+      playSound(clickAudio, true);
+      document.getElementById('listModal').classList.add('hidden');
+    }
+
+    function openModal(driveId) {
+      const modal = document.getElementById('videoModal');
+      const iframe = document.getElementById('videoFrame');
+      iframe.src = `https://drive.google.com/file/d/${driveId}/preview`;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      pauseBackgroundAudio();
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('videoModal');
+      document.getElementById('videoFrame').src = '';
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      playSound(closeAudio);
+      resumeBackgroundAudio();
+    }
+    document.getElementById('videoModal').addEventListener('click', e => { if (e.target.id === 'videoModal')
+        closeModal(); });
+    document.getElementById('listModal').addEventListener('click', e => { if (e.target.id === 'listModal')
+        closeListModal(); });
+
+    /* ============================================================
+       GAME DEV TOGGLE
+       ============================================================ */
+    let currentGameIndex = 0;
+    let gameHeroMediaIndex = [];
+
+    function renderGameSlides() {
+      const container = document.getElementById('gameSlides');
+      const dotsContainer = document.getElementById('gameDots');
+      container.innerHTML = '';
+      dotsContainer.innerHTML = '';
+      gameHeroMediaIndex = gameProjects.map(() => 0);
+
+      gameProjects.forEach((game, idx) => {
+        const slide = document.createElement('div');
+        slide.className = `game-slide ${idx === 0 ? 'active' : ''}`;
+        slide.id = `game-slide-${idx}`;
+
+        slide.innerHTML = `
+          <div class="grid lg:grid-cols-2 gap-14 items-start">
+            <div>
+              <p id="gameHeroLabel-${idx}" class="font-mono text-xs uppercase text-muted mb-3">Trailer — Edited by me</p>
+              <div class="relative mb-6">
+                <div id="gameHero-${idx}" class="w-full aspect-video rounded-xl overflow-hidden border border-hairline">
+                  <iframe id="ytframe-hero-${idx}" src="${withJsApi(game.trailerEmbed)}" title="${game.title} trailer" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                <button onclick="cycleGameHeroMedia(${idx}, -1)" aria-label="Show previous ${game.title} media" class="click-sound hover-sound absolute left-3 top-1/2 -translate-y-1/2 bg-raised/90 border border-hairline text-white rounded-full w-10 h-10 flex items-center justify-center hover:border-brand/60 z-10">◀</button>
+                <button onclick="cycleGameHeroMedia(${idx}, 1)" aria-label="Show next ${game.title} media" class="click-sound hover-sound absolute right-3 top-1/2 -translate-y-1/2 bg-raised/90 border border-hairline text-white rounded-full w-10 h-10 flex items-center justify-center hover:border-brand/60 z-10">▶</button>
+              </div>
+              <div class="mb-4 flex flex-wrap gap-2">
+                ${game.tags.map(tag => `<span class="tag inline-block" style="color:#21a7eb;border-color:#1e3340">${tag}</span>`).join('')}
+              </div>
+              <div class="text-base text-white leading-relaxed">${game.description}</div>
+            </div>
+
+            <div>
+              <h3 class="font-display font-semibold text-xl mb-6 text-white">👥 Team Members</h3>
+              <ul class="space-y-4">
+                ${game.team.map(m => `
+                  <li class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 pb-4 border-b border-hairline">
+                    <span class="sm:w-44 sm:shrink-0 font-medium text-white">${m.name}</span>
+                    <span class="text-muted text-sm">${m.role}</span>
+                  </li>
+                `).join('')}
+              </ul>
+
+              <!-- Itch.io Widgets – dark theme adapted -->
+              <div class="mt-8 pt-8 border-t border-hairline">
+                <h4 class="font-display font-semibold text-lg text-center text-white mb-4">🕹️ Play the Games</h4>
+                <div class="bg-base p-2 rounded-lg border border-hairline itch-wrapper max-w-md mx-auto">
+                  <iframe frameborder="0" src="${game.itchEmbed}" width="100%" height="167" class="w-full" title="Play ${game.title} on itch.io"></iframe>
                 </div>
               </div>
             </div>
-            <div class="py-4">
-              <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">A MINECRAFT TRAILER</h3>
-              <p class="mt-2 text-white drop-shadow-sm">A quick and fun edit that I did with my friends.</p>
-              <span class="flex items-center gap-2 text-sm text-gray-300">
-                Tools: Premiere Pro and Minecraft
-                <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-                <img src="svglogos/minecraft-svgrepo-com.svg" class="w-8 h-8">
-              </span>
-            </div>
           </div>
 
+          <!-- Concept Art Section -->
+          <div class="mt-24">
+            <h4 class="font-display font-semibold text-xl mb-8 text-center text-white">${game.conceptSectionTitle}</h4>
+            <div id="conceptGallery-${idx}" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+            <div id="conceptPagination-${idx}" class="flex justify-center gap-2 mt-8"></div>
+          </div>
 
-        <!-- Video 2 -->
-        <div onclick="openModal('1p2HTxn0AK4yRAc75OV1xIZOnMENFd-0D')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-            <div class="relative">
-              <img src="vThumnail/revenge.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
+          <!-- Progress Media Section -->
+          <div class="mt-24">
+            <h4 class="font-display font-semibold text-xl mb-8 text-center text-white">${game.mediaSectionTitle}</h4>
+            <div id="media-wrapper-${idx}" class="grid grid-cols-1 sm:grid-cols-3 gap-6"></div>
+            <div id="pagination-${idx}" class="flex justify-center gap-2 mt-8"></div>
+          </div>
+        `;
+        container.appendChild(slide);
+        initYouTubePlayer(`ytframe-hero-${idx}`);
 
-              <div class="absolute inset-0 flex items-center justify-center">
-                <div class="bg-black/50 rounded-full p-4">
-                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </svg>
+        const dot = document.createElement('button');
+        dot.className =
+          `w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-brand w-6' : 'bg-hairline hover:bg-muted'}`;
+        dot.onclick = () => goToGame(idx);
+        dotsContainer.appendChild(dot);
+      });
+
+      renderGameContent(0);
+    }
+
+    function cycleGameHeroMedia(gameIndex, direction) {
+      const game = gameProjects[gameIndex];
+      const media = [
+        { type: 'video', src: game.trailerEmbed, label: 'Trailer — Edited by me' },
+        { type: 'image', src: game.image, label: 'Project Image' },
+      ];
+      gameHeroMediaIndex[gameIndex] = (gameHeroMediaIndex[gameIndex] + direction + media.length) % media.length;
+
+      const item = media[gameHeroMediaIndex[gameIndex]];
+      const hero = document.getElementById(`gameHero-${gameIndex}`);
+      const label = document.getElementById(`gameHeroLabel-${gameIndex}`);
+      hero.innerHTML = item.type === 'video'
+        ? `<iframe id="ytframe-hero-${gameIndex}" src="${withJsApi(item.src)}" title="${game.title} trailer" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+        : `<img src="${item.src}" alt="${game.title} project image" class="w-full h-full object-cover">`;
+      label.textContent = item.label;
+      if (item.type === 'video') initYouTubePlayer(`ytframe-hero-${gameIndex}`);
+    }
+
+    function renderGameContent(index) {
+      const game = gameProjects[index];
+
+      const conceptContainer = document.getElementById(`conceptGallery-${index}`);
+      if (conceptContainer) {
+        conceptContainer.innerHTML = game.conceptArts.map((item, i) => `
+          <div>
+            <img src="${item.src}" alt="Concept Art" onclick="openImageModal('${item.src}', '${item.author}')"
+                 class="hover-sound click-sound w-full h-52 object-cover rounded-xl border border-hairline mb-2 cursor-pointer card-hover" loading="lazy" decoding="async">
+            <p class="text-sm text-center text-muted font-mono">${item.author}</p>
+          </div>
+        `).join('');
+      }
+
+      const mediaWrapper = document.getElementById(`media-wrapper-${index}`);
+      if (mediaWrapper) {
+        mediaWrapper.innerHTML = game.mediaItems.map((item, i) => {
+          if (item.type === "image") {
+            return `
+              <div>
+                <img src="${item.src}" alt="${item.caption}" onclick="openGameDevImageModal('${item.src}', \`${item.caption}\`)"
+                     class="hover-sound click-sound w-full h-44 object-cover rounded-xl border border-hairline cursor-pointer card-hover" loading="lazy" decoding="async">
+                <p class="text-sm text-center text-muted font-mono mt-2">${item.caption}</p>
+              </div>`;
+          }
+          if (item.type === "youtube") {
+            return `
+              <div>
+                <div class="rounded-xl overflow-hidden border border-hairline">
+                  <iframe id="ytframe-media-${index}-${i}" src="${withJsApi(item.src)}" title="${item.caption}" class="w-full h-80" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                <p class="text-sm text-center text-muted font-mono mt-2">${item.caption}</p>
+              </div>`;
+          }
+          return `
+            <div>
+              <div onclick="openLocalVideoModal('${item.src}')" class="hover-sound click-sound relative cursor-pointer rounded-xl overflow-hidden border border-hairline card-hover">
+                <img src="${item.poster}" class="w-full h-44 object-cover pointer-events-none" alt="${item.caption}" loading="lazy" decoding="async">
+                <div class="absolute inset-0 flex items-center justify-center bg-black/40">${playIcon(8)}</div>
               </div>
-            </div>
-          </div>
-          <div class="py-4">
-            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">REVENGE</h3>
-            <p class="mt-2 text-white drop-shadow-sm">I made this for fun, talking about taking revenge on my friend.</p>
-            <span class="flex items-center gap-2 text-sm text-gray-300">
-              Tools: Premiere Pro and After Effects
-              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-              <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
-            </span>
-          </div>
-        </div>
-
-        <!-- Video 3 -->
-        <div onclick="openModal('1wd5Nhb900nrWLp5W6EKVcrd6hymdXZti')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-            <div class="relative">
-              <img src="vThumnail/bestweek.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-
-              <div class="absolute inset-0 flex items-center justify-center">
-                <div class="bg-black/50 rounded-full p-4">
-                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="py-4">
-            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">FOUNDERS WEEK VLOG</h3>
-            <p class="mt-2 text-white drop-shadow-sm">This was edited after the founders week on fellowship baptist college, it was full of fun and exciting moments.</p>
-            <span class="flex items-center gap-2 text-sm text-gray-300">
-              Tools: Premiere Pro
-              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-       
-
-    <!-- School Edits -->
-    <div class="mb-24">
-  <!-- Flex container for heading and button -->
-  <div class="flex items-center justify-between mb-10">
-    <h2 class="text-3xl font-semibold text-gray-800 dark:text-white drop-shadow-sm">
-      🎓 School Edits
-    </h2>
-    <a onclick="showSchoolModal()" class="hover-sound click-sound  text-cyan-400 hover:underline transition cursor-pointer text-base">
-      Show More →
-    </a>
-  </div>
-  <!-- Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
-        <!-- Video 4 -->
-        <div onclick="openModal('1OyodRXj_73WNMlCftekRvaOFoAAia84x')" class="hover-sound click-sound  group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-            <div class="relative">
-              <img src="vThumnail/goodtime.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-
-              <div class="absolute inset-0 flex items-center justify-center">
-                <div class="bg-black/50 rounded-full p-4">
-                  <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="py-4">
-            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">MUSIC VIDEO w/Classmates</h3>
-            <p class="mt-2 text-white drop-shadow-sm">A fun music video project to represent how fun and energetic we are as BSIT students of fellowshipbaptist college.</p>
-            <span class="flex items-center gap-2 text-sm text-gray-300">
-              Tools: Premiere Pro
-              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-            </span>
-          </div>
-        </div>
-
-        <!-- Video 5 -->
-        <div onclick="openModal('1mMHSH2dXF8f29iPXPkGjsA-ezsd0S3ZV')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-          <div class="relative">
-              <img src="vThumnail/iamw.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="bg-black/50 rounded-full p-4">
-                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="py-4">
-            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">I AM WORLD</h3>
-            <p class="mt-2 text-white drop-shadow-sm">A short film project made by me and my friend, which was inspired by the story of "The Egg" by Andy Weir.</p>
-            <span class="flex items-center gap-2 text-sm text-gray-300">
-              Tools: Premiere Pro and After Effects
-              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-              <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
-            </span>
-          </div>
-        </div>
-
-        <!-- Video 6 -->
-        <div onclick="openModal('1WT5TmgRxVLUXgzqKST8KYW1NxhtyH944')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer">
-          <div class="relative">
-              <img src="vThumnail/fnw.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="bg-black/50 rounded-full p-4">
-                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="py-4">
-            <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">FROM NOWHERE TEASER</h3>
-            <p class="mt-2 text-white drop-shadow-sm">A teaser video for my game capstone project "From Nowhere".</p>
-            <span class="flex items-center gap-2 text-sm text-gray-300">
-              Tools: Premiere Pro and Unity3D
-              <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-              <img src="svglogos/unity-svgrepo-com.svg" class="w-8 h-8">
-            </span>
-          </div>
-        </div>
-    </div>
-    </div>
-
-    <!-- Promotional Edits -->
-<div class="mb-24">
-  <h2 class="text-3xl font-semibold mb-10 text-gray-800 dark:text-white drop-shadow-sm text-center">📢 Promotional Edits</h2>
-  
-  <!-- Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
-    
-    <!-- Video Card 1 -->
-<div onclick="openModal('1qJ8QM0mkieT3ZQVUgI0Km0LLqegiefpF')" 
-     class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-
-  <!-- Video Wrapper -->
-  <div class="relative">
-    <img src="vThumnail/enroll.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-    <div class="absolute inset-0 flex items-center justify-center">
-      <div class="bg-black/50 rounded-full p-4">
-        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- Content: Title, Description, Tools -->
-  <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-    <div>
-      <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">ENROLLMENT VIDEO FOR FBC</h3>
-      <p class="mt-2 text-white drop-shadow-sm">I was tasked to create an enrollment video for the school.</p>
-    </div>
-    <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-      Tools: Premiere Pro and After Effects
-      <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-8 h-8">
-      <img src="svglogos/adobe-after-effects-svgrepo-com.svg" class="w-8 h-8">
-    </span>
-  </div>
-</div>
-
-
-
-    <!-- Video Card 2 -->
-<div onclick="openModal('1bdBVUCiwDurCPNJzQsuDuPsYOX4Psjy8')" 
-     class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-
-  <!-- Video Wrapper -->
-  <div class="relative">
-    <img src="vThumnail/ad.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-    <div class="absolute inset-0 flex items-center justify-center">
-      <div class="bg-black/50 rounded-full p-4">
-        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- Content: Title, Description, Tools -->
-  <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-    <div>
-      <h3 class="text-xl font-bold text-cyan-500 drop-shadow-sm">CLIENT PROMOTIONAL VIDEO</h3>
-      <p class="mt-2 text-white drop-shadow-sm">
-        This was a video I edited for a client during my OJT at <strong>Precoce Technologies</strong>.
-        Here is the link to their website where the video is live:
-        <a href="https://www.topfinancialagency.com" 
-           target="_blank" 
-           onclick="event.stopPropagation();" 
-           class="text-cyan-400 underline hover:text-cyan-300 transition">
-          www.topfinancialagency.com
-        </a>
-      </p>
-    </div>
-    <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-      Tools: Canva
-      <img src="svglogos/Icon.jpeg" class="w-8 h-8">
-    </span>
-  </div>
-</div>
-
-
-
-  </div>
-</div>
-
-</section>
-<!-- Modal for Google Drive video -->
-<div id="videoModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center">
-  
-  <!-- Close button outside the video -->
-  <button onclick="closeModal()"
-  class="absolute top-4 right-6 w-10 h-10 flex items-center justify-center 
-         text-white text-2xl z-50 bg-gray-800 dark:bg-gray-900 
-         rounded-md shadow-md hover:bg-gray-800 transition">
-  &times;
-</button>
-
-  <!-- Video container with proper 16:9 aspect ratio -->
-  <div class="w-full max-w-4xl px-4">
-    <div class="relative w-full aspect-video">
-      <iframe id="videoFrame" class="absolute top-0 left-0 w-full h-full rounded-lg" allowfullscreen></iframe>
-    </div>
-  </div>
-</div>
-
-
-
-
-<!-- JS -->
-<script>
-  function openModal(googleDriveFileId) {
-    const modal = document.getElementById('videoModal');
-    const iframe = document.getElementById('videoFrame');
-
-    // Generate Google Drive embed URL
-    iframe.src = `https://drive.google.com/file/d/${googleDriveFileId}/preview`;
-    modal.classList.remove('hidden');
-    pauseBackgroundAudio(); // 🔇 Pause music
-  }
-
-  function closeModal() {
-    const modal = document.getElementById('videoModal');
-    const iframe = document.getElementById('videoFrame');
-
-    iframe.src = ''; // stop video
-    modal.classList.add('hidden');
-      // Play close sound
-    if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
+              <p class="text-sm text-center text-muted font-mono mt-2">${item.caption}</p>
+            </div>`;
+        }).join('');
+        game.mediaItems.forEach((item, i) => {
+          if (item.type === "youtube") initYouTubePlayer(`ytframe-media-${index}-${i}`);
+        });
       }
-      closeAudio.play();
     }
-    resumeBackgroundAudio(); // 🔊 Resume music
-  }
 
-  // Optional: click outside to close
-  document.getElementById('videoModal').addEventListener('click', function (e) {
-    if (e.target.id === 'videoModal') closeModal();
-  });
-</script>
+    function switchGame(direction) {
+      const newIndex = (currentGameIndex + direction + gameProjects.length) % gameProjects.length;
+      goToGame(newIndex);
+    }
 
+    function goToGame(index) {
+      if (index === currentGameIndex) return;
 
+      const slides = document.querySelectorAll('.game-slide');
+      const dots = document.querySelectorAll('#gameDots button');
 
-<!--Modal (More)-->
+      slides[currentGameIndex].classList.remove('active');
+      slides[currentGameIndex].classList.add('exit');
+      dots[currentGameIndex].className = 'w-2.5 h-2.5 rounded-full bg-hairline hover:bg-muted';
 
-<!-- More Personal Videos Modal -->
-<div id="moreVideosModal" class="fixed inset-0 bg-black bg-opacity-80 hidden overflow-y-auto px-4 py-12">
+      slides[index].classList.remove('exit');
+      slides[index].classList.add('active');
+      dots[index].className = 'w-2.5 h-2.5 rounded-full bg-brand w-6';
 
-  <div class="relative mx-auto w-full max-w-7xl bg-gray-900 rounded-lg p-8">
-    <button onclick="closeMoreModal()" class="hover-sound absolute top-2 right-4 text-white text-2xl px-3 py-1 z-50 bg-gray-800 rounded-md hover:bg-gray-700 transition">
-      &times;
-    </button>
+      currentGameIndex = index;
+      renderGameContent(index);
+    }
 
-    <h2 class="text-3xl font-bold text-cyan-400 mb-6 text-center">More Personal Edits</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- More Personal Video -->
-      <div onclick="openModal('1ZcHYUucxNH0pY3rywZrzvbySW0-c8c6y')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/nerds.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
+    /* ============================================================
+       CONCEPT ART MODAL
+       ============================================================ */
+    const allConceptArts = [...fromNowhere.conceptArts, ...theHunted.conceptArts];
+    let globalConceptIndex = 0;
+
+    function openImageModal(src, author) {
+      globalConceptIndex = allConceptArts.findIndex(item => item.src === src);
+      if (globalConceptIndex === -1) globalConceptIndex = 0;
+      updateConceptModal();
+      const modal = document.getElementById('imageModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeImageModal() {
+      playSound(closeAudio);
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function nextConceptImage() {
+      globalConceptIndex = (globalConceptIndex + 1) % allConceptArts.length;
+      updateConceptModal();
+    }
+
+    function prevConceptImage() {
+      globalConceptIndex = (globalConceptIndex - 1 + allConceptArts.length) % allConceptArts.length;
+      updateConceptModal();
+    }
+
+    function updateConceptModal() {
+      const image = allConceptArts[globalConceptIndex];
+      const modalImg = document.getElementById('modalImage');
+      const caption = document.getElementById('modalCaption');
+      modalImg.classList.replace('opacity-100', 'opacity-0');
+      modalImg.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        modalImg.src = image.src;
+        caption.textContent = image.author || '';
+        modalImg.classList.replace('opacity-0', 'opacity-100');
+        modalImg.classList.replace('scale-95', 'scale-100');
+      }, 150);
+    }
+
+    /* ============================================================
+       GAME DEV MEDIA MODAL
+       ============================================================ */
+    function openGameDevImageModal(src, caption = '') {
+      const modal = document.getElementById('gameDevImageModal');
+      const modalImg = document.getElementById('gameDevModalImage');
+      const modalCaption = document.getElementById('gameDevModalCaption');
+      modalImg.classList.replace('opacity-100', 'opacity-0');
+      modalImg.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        modalImg.src = src;
+        modalCaption.textContent = caption;
+        modalImg.classList.replace('opacity-0', 'opacity-100');
+        modalImg.classList.replace('scale-95', 'scale-100');
+      }, 150);
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGameDevImageModal() {
+      playSound(closeAudio);
+      const modal = document.getElementById('gameDevImageModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function openLocalVideoModal(src) {
+      const video = document.getElementById("localModalVideo");
+      const modal = document.getElementById("localVideoModal");
+      video.pause();
+      video.querySelector("source").src = src;
+      video.load();
+      video.play().catch(() => {});
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      pauseBackgroundAudio();
+    }
+
+    function closeLocalVideoModal() {
+      const modal = document.getElementById("localVideoModal");
+      document.getElementById("localModalVideo").pause();
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      resumeBackgroundAudio();
+      playSound(closeAudio);
+    }
+
+    /* ============================================================
+       3D CAROUSEL
+       ============================================================ */
+    function renderCarousel() {
+      const container = document.getElementById('carouselContainer');
+      const dots = document.getElementById('carouselDots');
+      container.innerHTML = '';
+
+      models3d.forEach((model) => {
+        const div = document.createElement('div');
+        div.className = 'carousel-item';
+        div.innerHTML = `
+          <div class="bg-raised border border-hairline rounded-xl overflow-hidden card-hover cursor-pointer h-full flex flex-col">
+            <img onclick="openModelingModal('${model.image}')" class="hover-sound click-sound w-full h-48 object-cover" src="${model.image}" alt="${model.title}">
+            <div class="p-4 flex-1 flex flex-col">
+              <h4 class="text-lg font-display font-semibold text-brand">${model.title}</h4>
+              <p class="mt-1 text-sm text-muted leading-snug flex-1">${model.description}</p>
             </div>
           </div>
-        </div>
+        `;
+        container.appendChild(div);
+      });
 
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">See You Nerds</h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">A Emotional and nostalgic good bye to our old group when i was young.</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-      <div onclick="openModal('1ttUsQdQd858-LBtjt-TAU1BrPq-qmrhy')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/boo.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY;
+      }, { passive: false });
 
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">
-              BOO
-            </h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">A fun edit with me trying out 3d animations</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro and Blender
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-            <img src="svglogos/blender-svgrepo-com.svg " class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-      <div onclick="openModal('1aEcc5CnotCPL-xeG8povp1UbsPv3y61O')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/golden.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">
-              Golden Fredbear
-            </h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">Second part of the boo</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro and Blender
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-            <img src="svglogos/blender-svgrepo-com.svg " class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-      <div onclick="openModal('1v6Wi-Wee6tAq6gc3U0hA9jZkhahLt27V')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/grade11.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">Grade 11 Music Video</h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">A cute nostalgic music video of my grade 11th life.</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-
- <!-- More School Videos Modal -->
-<div id="moreSchoolModal" class="fixed inset-0 bg-black bg-opacity-80 hidden overflow-y-auto px-4 py-12">
-
-  <div class="relative mx-auto w-full max-w-7xl bg-gray-900 rounded-lg p-8">
-    <button onclick="closeSchoolModal()" class="hover-sound absolute top-2 right-4 text-white text-2xl px-3 py-1 z-50 bg-gray-800 rounded-md hover:bg-gray-700 transition">
-      &times;
-    </button>
-
-    <h2 class="text-3xl font-bold text-cyan-400 mb-6 text-center">More School Edits</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- More School Video -->
-      <div onclick="openModal('18MY54fIpT1FGXzOj5b8bbd0qT3XfNU1p')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/vlogme.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">Day Vlog</h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">This was a project where we showcase what we do in a day of our life.</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-      <div onclick="openModal('1z4r-c3oryE9X-PCMEKTx4RRgP2sqC679')" class="hover-sound click-sound group transition-transform transform hover:-translate-y-2 duration-300 cursor-pointer flex flex-col h-full items-center text-center">
-        <div class="relative">
-          <img src="vThumnail/cebu.png"
-                class="w-full h-64 rounded-lg shadow-xl object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-black/50 rounded-full p-4">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Title, Description, Tools -->
-        <div class="flex flex-col justify-between flex-grow py-4 items-center text-center max-w-xl">
-          <div>
-            <h3 class="text-lg font-semibold text-cyan-400">Cebu-bohol trip vlog</h3>
-            <p class="mt-2 text-white text-sm drop-shadow-sm">This was a recent vlog, where we went to cebu and bohol for a educational tour.</p>
-          </div>
-          <span class="mt-4 flex items-center gap-2 text-sm text-gray-300">
-            Tools: Premier Pro
-            <img src="svglogos/adobe-premiere-svgrepo-com.svg" class="w-6 h-6">
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!--JS -->
-
-<script>
-  function showMoreModal() {
-    document.getElementById('moreVideosModal').classList.remove('hidden');
-  }
-
-  function closeMoreModal() {
-       // Play close sound
-    if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
+      const totalDots = Math.ceil(models3d.length / 3);
+      dots.innerHTML = '';
+      for (let i = 0; i < totalDots; i++) {
+        const dot = document.createElement('button');
+        dot.className =
+          `w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === 0 ? 'bg-brand w-6' : 'bg-hairline hover:bg-muted'}`;
+        dot.onclick = () => scrollCarouselTo(i);
+        dots.appendChild(dot);
       }
-      closeAudio.play();
-    }
-    document.getElementById('moreVideosModal').classList.add('hidden');
-  }
 
-  function showSchoolModal() {
-    document.getElementById('moreSchoolModal').classList.remove('hidden');
-  }
-
-  function closeSchoolModal() {
-       // Play close sound
-    if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
-      }
-      closeAudio.play();
-    }
-    document.getElementById('moreSchoolModal').classList.add('hidden');
-  }
-</script>
-
-<!-- Game Development -->
-<section id="Start" class="relative bg-white dark:bg-gray-900 overflow-hidden">
-  <!-- Background image -->
-  <div class="absolute inset-0 bg-left bg-cover bg-no-repeat opacity-15"
-       style="background-image: url('GameDev/FrownowwhereFInal.png');">
-  </div>
-
-  <!-- Fading overlays -->
-  <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-white dark:from-gray-900 to-transparent z-10"></div>
-  <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white dark:from-gray-900 to-transparent z-10"></div>
-
-  <!-- Content -->
-  <div class="relative z-20 container px-6 py-20 mx-auto">
-    <h2 class="text-4xl text-center font-bold mb-16 text-gray-800 dark:text-white drop-shadow-sm">🎮 Game Dev Project</h2>
-
-    <div class="grid lg:grid-cols-2 gap-12 items-start">
-      <!-- Left: Image + Description -->
-      <div>
-        <img src="GameDev/animated/IMG_0111.PNG" alt="From Nowhere Logo"
-             class="w-full h-60 object-contain mb-6 rounded-xl shadow-lg mx-auto" />
-
-        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-          <strong>From Nowhere</strong> is a narrative-driven indie game about unraveling a mysterious house that blurs the lines between memory and reality. 
-          As the protagonist wakes up from a nightmare with the tasked to find out what or why the house is calling him, players must explore dreamlike landscapes, interact with strange Entities, and solve puzzles 
-          to discover who they are and what brought them to this place. It’s a journey about self-identity, trauma, and redemption set in a surreal universe.
-        </p>
-      </div>
-
-      <!-- Right: Team Members -->
-      <div class="text-center">
-        <h3 class="text-2xl font-semibold text-cyan-500 mb-6">👥 Team Members</h3>
-        <ul class="inline-block text-left space-y-4">
-          <li class="flex gap-4">
-            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Eric Jorbina Jr.</span>
-            <span class="text-gray-600 dark:text-gray-300">Game Designer / Programmer</span>
-          </li>
-          <li class="flex gap-4">
-            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Jim Tamson</span>
-            <span class="text-gray-600 dark:text-gray-300">Story Telling / Documentation</span>
-          </li>
-          <li class="flex gap-4">
-            <span class="w-40 text-right font-medium text-gray-700 dark:text-white">Kenth Jarred Pilares</span>
-            <span class="text-gray-600 dark:text-gray-300">3D Modeler / Artist</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Concept Art Gallery -->
-    <div class="mt-24">
-      <h3 class="text-2xl font-semibold text-cyan-500 mb-6 text-center">🎨 Concept Arts</h3>
-
-      <div id="conceptGallery" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Filled by JS -->
-      </div>
-
-      <!-- Pagination -->
-      <div class="flex justify-center mt-6 space-x-2" id="conceptPagination"></div>
-    </div>
-
-    <!-- Progress Media -->
-    <div class="mt-24 text-center">
-      <h3 class="text-2xl font-semibold text-cyan-500 mb-6">🛠️ Game Development Progress</h3>
-
-      <div class="flex justify-center">
-        <div id="media-wrapper"
-          class="flex space-x-6 overflow-visible pb-6 max-w-5xl mx-auto px-2 transition-all duration-500 ease-in-out">
-
-          <!-- Filled by JS with items using the same hover animation class -->
-        </div>
-      </div>
-
-      <div id="pagination" class="flex justify-center space-x-2 mt-4"></div>
-    </div>
-  </div>
-</section>
-
-<!-- Scripts -->
-<script>
-  // ✅ Use 'let' to avoid duplicate declaration issues
-  // ─── 1) Re‑bind all .hover-sound & .click-sound elements ────────────────────────
-  function setupSoundListeners() {
-    document.querySelectorAll(".hover-sound").forEach(el => {
-      el.onmouseenter = () => {
-        // your global hoverAudio
-        hoverAudio.pause();
-        hoverAudio.currentTime = 0;
-        hoverAudio.play();
-      };
-    });
-    document.querySelectorAll(".click-sound").forEach(el => {
-      el.onclick = () => {
-        // your global clickAudio
-        clickAudio.pause();
-        clickAudio.currentTime = 0;
-        clickAudio.play();
-      };
-    });
-  }
-  
-  let conceptArts = [
-    { src: "GameDev/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Kenth Jarred Pilares" },
-    { src: "GameDev/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
-    { src: "GameDev/ConceptArt/IMG_0108.jpg", author: "by Jim Tamson" },
-  ];
-
-  let currentConceptPage = 0;
-  const conceptPerPage = 3;
-  let currentConceptIndex = 0;
-
-  function showConceptPage(page) {
-    const container = document.getElementById("conceptGallery");
-    const pagination = document.getElementById("conceptPagination");
-    container.innerHTML = "";
-    pagination.innerHTML = "";
-
-    const start = page * conceptPerPage;
-    const items = conceptArts.slice(start, start + conceptPerPage);
-
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <img src="${item.src}" alt="Concept Art"
-             class="hover-sound click-sound w-full h-48 object-cover rounded-xl shadow-md mb-2 cursor-pointer hover:scale-105 transition-transform"
-             onclick="openImageModal('${item.src}')">
-        <p class="text-sm text-center text-gray-500 dark:text-gray-400">${item.author}</p>
-      `;
-      container.appendChild(div);
-    });
-
-    const totalPages = Math.ceil(conceptArts.length / conceptPerPage);
-    for (let i = 0; i < totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i + 1;
-      btn.className = "hover-sound click-sound px-4 py-2 text-sm rounded-md mx-1 font-medium transition-colors duration-300 " +
-        (i === page
-          ? "bg-gray-800 text-white hover:bg-blue-500"
-          : "bg-white text-gray-700 border border-gray-300 dark:bg-gray-800 dark:text-gray-200 hover:bg-blue-500 hover:text-white");
-      btn.onclick = () => showConceptPage(i);
-      pagination.appendChild(btn);
-    }
-  }
-
-  function openImageModal(src) {
-    const index = conceptArts.findIndex(item => item.src === src);
-    if (index === -1) {
-      console.error("Image source not found in conceptArts:", src);
-      return;
+      container.addEventListener('scroll', updateDots);
+      updateDots();
     }
 
-    currentConceptIndex = index;
-    updateConceptModal();
-
-    const modal = document.getElementById('imageModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function closeImageModal() {
-     // Play close sound
-    if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
-      }
-      closeAudio.play();
-    }
-    const modal = document.getElementById('imageModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-
-  function nextConceptImage() {
-    currentConceptIndex = (currentConceptIndex + 1) % conceptArts.length;
-    updateConceptModal();
-  }
-
-  function prevConceptImage() {
-    currentConceptIndex = (currentConceptIndex - 1 + conceptArts.length) % conceptArts.length;
-    updateConceptModal();
-  }
-
-  function updateConceptModal() {
-    const image = conceptArts[currentConceptIndex];
-    const modalImg = document.getElementById('modalImage');
-    const caption = document.getElementById('modalCaption');
-
-    modalImg.classList.remove('opacity-100', 'scale-100');
-    modalImg.classList.add('opacity-0', 'scale-95');
-
-    setTimeout(() => {
-      modalImg.src = image.src;
-      caption.textContent = image.author || '';
-      modalImg.classList.remove('opacity-0', 'scale-95');
-      modalImg.classList.add('opacity-100', 'scale-100');
-    }, 150);
-  }
-
-  showConceptPage(currentConceptPage);
-
-  // Media items for video/image progress carousel
-  const mediaItems = [
-    { type: "video", src: "GameDev/VIdeo/484837993_9486038654772968_3589704999883936394_n.mp4", caption: "Gameplay Testing" },
-    { type: "image", src: "GameDev/457882625_1080195720488037_4061530265910010825_n.png", caption: "3D modeling some assets" },
-    { type: "video", src: "GameDev/VIdeo/2024-07-20 21-42-23.mp4", caption: "Early Level State" },
-    // Add more items here if needed
-  ];
-
-  const itemsPerPage = 3;
-  let currentPage = 0;
-
-  function renderMediaItems(page) {
-  const wrapper = document.getElementById("media-wrapper");
-  wrapper.innerHTML = "";
-
-  const start = page * itemsPerPage;
-  const items = mediaItems.slice(start, start + itemsPerPage);
-
-  items.forEach(item => {
-    const outer = document.createElement("div");
-    outer.className = "min-w-[320px] flex-shrink-0";
-
-    const hoverContainer = document.createElement("div");
-    hoverContainer.className = "transition-transform transform duration-300 ease-in-out hover:scale-[1.03]";
-
-    if (item.type === "image") {
-      hoverContainer.innerHTML = `
-        <img src="${item.src}" alt="${item.caption}"
-             class="hover-sound click-sound w-full h-48 object-cover rounded-xl cursor-pointer"
-             onclick="openGameDevImageModal('${item.src}', \`${item.caption}\`)">
-        <p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-2">${item.caption}</p>
-      `;
-    } else {
-  hoverContainer.innerHTML = `
-    <div class="hover-sound click-sound relative cursor-pointer rounded-xl overflow-hidden"
-         onclick="openLocalVideoModal('${item.src}')">
-      <video muted class="w-full h-48 object-cover pointer-events-none">
-        <source src="${item.src}" type="video/mp4">
-      </video>
-      <div class="absolute inset-0 flex items-center justify-center bg-black/40">
-        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </div>
-    </div>
-    <p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-2">${item.caption}</p>
-  `;
-}
-
-    outer.appendChild(hoverContainer);
-    wrapper.appendChild(outer);
-  });
-}
-
-
-
-  function renderPagination() {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    const totalPages = Math.ceil(mediaItems.length / itemsPerPage);
-    for (let i = 0; i < totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i + 1;
-      btn.onclick = () => {
-        currentPage = i;
-        renderMediaItems(currentPage);
-        renderPagination();
-      };
-      btn.className = "hover-sound click-sound px-4 py-2 mx-1 text-sm font-medium rounded-md transition-colors duration-300 " +
-        (i === currentPage
-          ? "bg-gray-800 text-white hover:bg-blue-500"
-          : "bg-white text-gray-700 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 hover:bg-blue-500 hover:text-white");
-      pagination.appendChild(btn);
-    }
-  }
-
-  function setupSoundListeners() {
-  document.querySelectorAll(".hover-sound").forEach(el => {
-    el.onmouseenter = () => {
-      if (!hoverAudio.paused) {
-        hoverAudio.pause();
-        hoverAudio.currentTime = 0;
-      }
-      hoverAudio.play();
-    };
-  });
-
-  document.querySelectorAll(".click-sound").forEach(el => {
-    el.addEventListener("click", () => {
-      if (!clickAudio.paused) {
-        clickAudio.pause();
-        clickAudio.currentTime = 0;
-      }
-      clickAudio.play();
-    });
-  });
-}
-  function setupSoundListeners() {
-  // Delegate hover sound
-  document.body.addEventListener("mouseover", e => {
-    if (e.target.classList.contains("hover-sound")) {
-      if (!hoverAudio.paused) {
-        hoverAudio.pause();
-        hoverAudio.currentTime = 0;
-      }
-      hoverAudio.play();
-    }
-  });
-
-  // Delegate click sound
-  document.body.addEventListener("click", e => {
-    if (e.target.classList.contains("click-sound")) {
-      if (!clickAudio.paused) {
-        clickAudio.pause();
-        clickAudio.currentTime = 0;
-      }
-      clickAudio.play();
-    }
-  });
-}
-
-  renderMediaItems(currentPage);
-  renderPagination();
-  setupSoundListeners();
-</script>
-
-
-
-<!-- Game Dev Concept Art Modal with Arrows (Fixed & Final Version) -->
-<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
-  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
-    
-    <!-- Left Arrow -->
-    <button onclick="prevConceptImage()" class="hover-sound click-sound absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
-      ◀
-    </button>
-
-    <!-- Right Arrow -->
-    <button onclick="nextConceptImage()" class="hover-sound click-sound absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
-      ▶
-    </button>
-
-    <!-- Close Button -->
-    <button onclick="closeImageModal()" class="hover-sound absolute top-2 right-4 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
-      &times;
-    </button>
-
-    <!-- Image Container -->
-    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex flex-col justify-center items-center">
-      <img id="modalImage" src="" alt="Concept Art" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
-      <p id="modalCaption" class="mt-4 text-sm text-gray-400 text-center"></p>
-    </div>
-  </div>
-</div>
-
-<!-- Game Dev Image Modal -->
-<div id="gameDevImageModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
-  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
-    
-    <!-- Close Button -->
-    <button onclick="closeGameDevImageModal()" class="absolute top-2 right-4 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
-      &times;
-    </button>
-
-    <!-- Image Container -->
-    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex flex-col justify-center items-center">
-      <img id="gameDevModalImage" src="" alt="Game Dev Media" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
-      <p id="gameDevModalCaption" class="mt-4 text-sm text-gray-400 text-center"></p>
-    </div>
-  </div>
-</div>
-
-<!-- Local Video Modal -->
-<div id="localVideoModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
-  <div class="relative w-full max-w-5xl mx-auto bg-black rounded-lg overflow-hidden shadow-lg">
-    <button onclick="closeLocalVideoModal()"
-        class="hover-sound click-sound absolute top-2 right-2 text-white text-xl font-bold z-10 bg-gray-800 hover:bg-blue-600 w-10 h-10 flex items-center justify-center rounded">
-  ✕
-</button>
-    <video id="localModalVideo" controls autoplay class="w-full h-auto max-h-[80vh] rounded-lg">
-      <source src="" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-  </div>
-</div>
-
-<!--Localvideo Modal-->
-<script>
-  function openLocalVideoModal(src) {
-  const video = document.getElementById("localModalVideo");
-  const modal = document.getElementById("localVideoModal");
-
-  // Update video source
-  video.pause();
-  video.querySelector("source").src = src;
-  video.load();
-  video.play();
-
-  // Show modal
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-  pauseBackgroundAudio(); // 🔇 Pause music
-}
-
-function closeLocalVideoModal() {
-  const modal = document.getElementById("localVideoModal");
-  const video = document.getElementById("localModalVideo");
-
-  video.pause();
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-  resumeBackgroundAudio(); // 🔊 Resume music
-
-  // Optional: play close audio
-  if (typeof closeAudio !== "undefined") {
-    if (!closeAudio.paused) {
-      closeAudio.pause();
-      closeAudio.currentTime = 0;
-    }
-    closeAudio.play();
-  }
-}
-
-</script>
-
-
-<!-- Concept Art Modal Script -->
-<script>
-  const conceptArts = [
-    { src: "GameDev/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Kenth Jarred Pilares" },
-    { src: "GameDev/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
-    { src: "GameDev/ConceptArt/IMG_0108.jpg", author: "by Jim Tamson" },
-    // Add more as needed
-  ];
-
-  let currentConceptIndex = 0;
-
-  function openImageModal(src) {
-    const index = conceptArts.findIndex(item => item.src === src);
-    if (index === -1) {
-      console.error("❌ Image source not found in conceptArts:", src);
-      return;
+    function scrollCarousel(direction) {
+      const container = document.getElementById('carouselContainer');
+      const itemWidth = container.querySelector('.carousel-item')?.offsetWidth || 320;
+      const gap = 24;
+      const scrollAmount = (itemWidth + gap) * direction;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      setTimeout(updateDots, 400);
     }
 
-    currentConceptIndex = index;
-    updateConceptModal();
-    const modal = document.getElementById('imageModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-
-  function nextConceptImage() {
-    currentConceptIndex = (currentConceptIndex + 1) % conceptArts.length;
-    updateConceptModal();
-  }
-
-  function prevConceptImage() {
-    currentConceptIndex = (currentConceptIndex - 1 + conceptArts.length) % conceptArts.length;
-    updateConceptModal();
-  }
-
-  function updateConceptModal() {
-    const image = conceptArts[currentConceptIndex];
-    const modalImg = document.getElementById('modalImage');
-    const caption = document.getElementById('modalCaption');
-
-    modalImg.classList.remove('opacity-100', 'scale-100');
-    modalImg.classList.add('opacity-0', 'scale-95');
-
-    setTimeout(() => {
-      modalImg.src = image.src;
-      caption.textContent = image.author || '';
-      modalImg.classList.remove('opacity-0', 'scale-95');
-      modalImg.classList.add('opacity-100', 'scale-100');
-    }, 150);
-  }
-</script>
-<!--GameDev Modal-->
-<script>
-  function openGameDevImageModal(src, caption = '') {
-    const modal = document.getElementById('gameDevImageModal');
-    const modalImg = document.getElementById('gameDevModalImage');
-    const modalCaption = document.getElementById('gameDevModalCaption');
-
-    modalImg.classList.remove('opacity-100', 'scale-100');
-    modalImg.classList.add('opacity-0', 'scale-95');
-
-    setTimeout(() => {
-      modalImg.src = src;
-      modalCaption.textContent = caption;
-      modalImg.classList.remove('opacity-0', 'scale-95');
-      modalImg.classList.add('opacity-100', 'scale-100');
-    }, 150);
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function closeGameDevImageModal() {
-    if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
-      }
-      closeAudio.play();
+    function scrollCarouselTo(index) {
+      const container = document.getElementById('carouselContainer');
+      const itemWidth = container.querySelector('.carousel-item')?.offsetWidth || 320;
+      const gap = 24;
+      container.scrollTo({ left: index * (itemWidth + gap), behavior: 'smooth' });
+      setTimeout(updateDots, 400);
     }
-    const modal = document.getElementById('gameDevImageModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-</script>
 
+    function updateDots() {
+      const container = document.getElementById('carouselContainer');
+      const dots = document.getElementById('carouselDots').querySelectorAll('button');
+      const itemWidth = container.querySelector('.carousel-item')?.offsetWidth || 320;
+      const gap = 24;
+      const scrollLeft = container.scrollLeft;
+      const index = Math.round(scrollLeft / (itemWidth + gap));
+      dots.forEach((dot, i) => {
+        dot.className =
+          `w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === index ? 'bg-brand w-6' : 'bg-hairline hover:bg-muted'}`;
+      });
+    }
 
-
-
-
-<!-- 3D Modeling Projects Section -->
-<section class="bg-white dark:bg-gray-900 py-10">
-  <div class="container px-6 mx-auto">
-    <h2 class="text-3xl font-semibold text-gray-800 capitalize dark:text-white mb-8">🧊 3D Modeling Projects</h2>
-
-    <!-- Cards injected by JavaScript -->
-    <div id="cardContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-
-    <!-- Pagination -->
-    <div id="paginationControls" class="flex justify-center mt-10 space-x-2"></div>
-  </div>
-</section>
-
-<!-- Modal (Fixed version for Modeling Projects) -->
-<div id="modelingModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center p-4">
-  <div class="relative w-full max-w-5xl mx-auto flex items-center justify-center">
-    
-    <!-- Left Arrow -->
-    <button onclick="prevModelingImage()" class="hover-sound click-sound absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
-      ◀
-    </button>
-
-    <!-- Right Arrow -->
-    <button onclick="nextModelingImage()" class="hover-sound click-sound absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white rounded-full w-12 h-12 text-2xl flex items-center justify-center shadow-md hover:bg-gray-700 z-50">
-      ▶
-    </button>
-
-    <!-- Image & Close -->
-    <div class="relative w-full bg-gray-900 rounded-lg shadow-lg p-6 flex justify-center items-center">
-      <!-- Close Button -->
-      <button onclick="closeModelingModal()" class="hover-sound absolute top-2 right-2 text-white text-xl px-3 py-1 z-50 bg-gray-800 rounded-md shadow-md hover:bg-gray-700 transition">
-        &times;
-      </button>
-
-      <img id="modelingModalImage" src="" alt="3D Project" class="max-h-[80vh] object-contain rounded-lg transition duration-300 ease-in-out opacity-100 scale-100">
-    </div>
-  </div>
-</div>
-
-
-<script>
-  function setupSoundListeners() {
-    document.querySelectorAll(".hover-sound").forEach(el => {
-      el.onmouseenter = () => {
-        // your global hoverAudio
-        hoverAudio.pause();
-        hoverAudio.currentTime = 0;
-        hoverAudio.play();
-      };
-    });
-    document.querySelectorAll(".click-sound").forEach(el => {
-      el.onclick = () => {
-        // your global clickAudio
-        clickAudio.pause();
-        clickAudio.currentTime = 0;
-        clickAudio.play();
-      };
-    });
-  }
-  
-  document.addEventListener("DOMContentLoaded", function () {
-    const models = [
-      { title: "From Nowhere Poster", description: "It was a 3d model concept for our game From Nowhere.", image: "3DModels/Blenderfnw.png" },
-      { title: "3D Buildings", description: "I was practicing using a plugin for Blender", image: "3DModels/Buildings.jpg" },
-      { title: "Dog", description: "This was a Practice for for trying to test animation for the dog on our game.", image: "3DModels/dog.jpg" },
-      { title: "EarlyMorning", description: "This was my First 3d render that i did.", image: "3DModels/EarlyMorning.png" },
-      { title: "From Nowhere Final Poster", description: "The final version with lightings for the 3d model concept for our game From Nowhere.", image: "3DModels/finishedversfnw.jpg" },
-      { title: "Golden Freddy", description: "This model that i used i found in the internet, and i tried to animate it and add it to a video.", image: "3DModels/fnafanim.jpg" },
-      { title: "Fuse Box", description: "3D model of fusebox for our game From Nowhere.", image: "3DModels/fusebox.png" },
-      { title: "Star/Sun", description: "A star using a mix of different type of lightings.", image: "3DModels/star.jpg" }
-    ];
-
-    const itemsPerPage = 3;
-    let currentPage = 1;
+    /* ============================================================
+       MODELING MODAL
+       ============================================================ */
     let currentModalIndex = 0;
 
-    function renderCards(page) {
-      const start = (page - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      const visibleModels = models.slice(start, end);
-      const container = document.getElementById('cardContainer');
+    function openModelingModal(imageSrc) {
+      currentModalIndex = models3d.findIndex(m => m.image === imageSrc);
+      if (currentModalIndex === -1) currentModalIndex = 0;
+      document.getElementById('modelingModalImage').src = imageSrc;
+      const modal = document.getElementById('modelingModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      pauseBackgroundAudio();
+    }
 
-      container.innerHTML = visibleModels.map(model => `
-        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md transform transition-transform duration-300 hover:scale-105 cursor-pointer">
-          <img onclick="openModelingModal('${model.image}')" class="hover-sound click-sound w-full h-64 object-cover object-center" src="${model.image}" alt="${model.title}">
-          <div class="p-4">
-            <h3 class="text-xl font-bold text-cyan-500 ">${model.title}</h3>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">${model.description}</p>
+    function closeModelingModal() {
+      playSound(closeAudio);
+      const modal = document.getElementById('modelingModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      resumeBackgroundAudio();
+    }
+
+    function nextModelingImage() {
+      currentModalIndex = (currentModalIndex + 1) % models3d.length;
+      switchModelingImage(models3d[currentModalIndex].image);
+    }
+
+    function prevModelingImage() {
+      currentModalIndex = (currentModalIndex - 1 + models3d.length) % models3d.length;
+      switchModelingImage(models3d[currentModalIndex].image);
+    }
+
+    function switchModelingImage(newSrc) {
+      const img = document.getElementById('modelingModalImage');
+      img.classList.replace('opacity-100', 'opacity-0');
+      img.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        img.src = newSrc;
+        img.classList.replace('opacity-0', 'opacity-100');
+        img.classList.replace('scale-95', 'scale-100');
+      }, 150);
+    }
+
+    /* ============================================================
+       ART MODAL (Graphics & Arts)
+       ============================================================ */
+    let currentArtItems = [];
+    let currentArtIndex = 0;
+
+    function openArtModal(items, index) {
+      currentArtItems = items;
+      currentArtIndex = index;
+      updateArtModal();
+      const modal = document.getElementById('artModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      pauseBackgroundAudio();
+    }
+
+    function closeArtModal() {
+      playSound(closeAudio);
+      const modal = document.getElementById('artModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      resumeBackgroundAudio();
+    }
+
+    function nextArtImage() {
+      currentArtIndex = (currentArtIndex + 1) % currentArtItems.length;
+      updateArtModal();
+    }
+
+    function prevArtImage() {
+      currentArtIndex = (currentArtIndex - 1 + currentArtItems.length) % currentArtItems.length;
+      updateArtModal();
+    }
+
+    function updateArtModal() {
+      const item = currentArtItems[currentArtIndex];
+      const modalImg = document.getElementById('artModalImage');
+      const caption = document.getElementById('artModalCaption');
+      modalImg.classList.replace('opacity-100', 'opacity-0');
+      modalImg.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        modalImg.src = item.src;
+        caption.textContent = item.title || '';
+        modalImg.classList.replace('opacity-0', 'opacity-100');
+        modalImg.classList.replace('scale-95', 'scale-100');
+      }, 150);
+    }
+
+    /* ============================================================
+       GRAPHICS & ARTS RENDER
+       ============================================================ */
+    function renderGraphics() {
+      const grid = document.getElementById('graphicsGrid');
+      grid.innerHTML = graphicsItems.map((item, index) => `
+        <div class="grid-lazy-item bg-raised border border-hairline rounded-xl overflow-hidden card-hover cursor-pointer group" onclick="openArtModal(graphicsItems, ${index})">
+          <img src="${item.src}" alt="${item.title}" class="hover-sound click-sound w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
+          <div class="p-3 text-center">
+            <p class="text-sm text-muted font-mono">${item.title}</p>
+          </div>
+        </div>
+      `).join('');
+
+      const logosGrid = document.getElementById('logosGrid');
+      logosGrid.innerHTML = logoItems.map((item, index) => `
+        <div class="grid-lazy-item bg-raised border border-hairline rounded-xl overflow-hidden card-hover cursor-pointer group" onclick="openArtModal(logoItems, ${index})">
+          <img src="${item.src}" alt="${item.title}" class="hover-sound click-sound w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
+          <div class="p-3 text-center">
+            <p class="text-sm text-muted font-mono">${item.title}</p>
           </div>
         </div>
       `).join('');
     }
 
-    function renderPagination() {
-      const totalPages = Math.ceil(models.length / itemsPerPage);
-      const pagination = document.getElementById('paginationControls');
-      let html = '';
-
-      if (currentPage > 1) {
-        html += `<button onclick="goToPage(${currentPage - 1})" class="hover-sound click-sound px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Previous</button>`;
-      }
-
-      for (let i = 1; i <= totalPages; i++) {
-        const isCurrent = i === currentPage;
-        html += `<button onclick="goToPage(${i})"
-          class="hover-sound click-sound px-4 py-2 text-sm font-medium rounded-md ${
-            isCurrent
-              ? 'text-gray-400 bg-gray-200 dark:bg-gray-700 dark:text-gray-300 cursor-not-allowed'
-              : 'text-blue-500 bg-white border border-gray-300 hover:bg-blue-600 hover:text-white dark:bg-gray-800 dark:text-white dark:border-gray-700'
-          }">${i}</button>`;
-      }
-
-      if (currentPage < totalPages) {
-        html += `<button onclick="goToPage(${currentPage + 1})" class="hover-sound click-sound px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Next</button>`;
-      }
-
-      pagination.innerHTML = html;
+    function renderArts() {
+      const grid = document.getElementById('artsGrid');
+      grid.innerHTML = artsItems.map((item, index) => `
+        <div class="grid-lazy-item bg-raised border border-hairline rounded-xl overflow-hidden card-hover cursor-pointer group" onclick="openArtModal(artsItems, ${index})">
+          <img src="${item.src}" alt="${item.title}" class="hover-sound click-sound w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async">
+          <div class="p-3 text-center">
+            <p class="text-sm text-muted font-mono">${item.title}</p>
+          </div>
+        </div>
+      `).join('');
     }
 
-    window.goToPage = function (page) {
-      currentPage = page;
-      renderCards(currentPage);
-      renderPagination();
+    /* ============================================================
+       YOUTUBE PLAYER TRACKING (fade bg music on play)
+       ============================================================ */
+    function withJsApi(url) {
+      const sep = url.includes('?') ? '&' : '?';
+      return `${url}${sep}enablejsapi=1`;
+    }
+
+    let ytApiReady = false;
+    const pendingYTIds = [];
+    window.onYouTubeIframeAPIReady = function () {
+      ytApiReady = true;
+      pendingYTIds.splice(0).forEach(id => createYTPlayer(id));
     };
 
-    window.openModelingModal = function (imageSrc) {
-      currentModalIndex = models.findIndex(model => model.image === imageSrc);
-      document.getElementById('modelingModalImage').src = imageSrc;
-      const modal = document.getElementById('modelingModal');
-      modal.classList.remove('hidden');
-      setTimeout(() => modal.classList.add('flex'), 10);
-    };
-
-    window.closeModelingModal = function () {
-      if (closeAudio) {
-      if (!closeAudio.paused) {
-        closeAudio.pause();
-        closeAudio.currentTime = 0;
+    function initYouTubePlayer(iframeId) {
+      if (ytApiReady && window.YT && window.YT.Player) {
+        createYTPlayer(iframeId);
+      } else {
+        pendingYTIds.push(iframeId);
       }
-      closeAudio.play();
-    }
-      const modal = document.getElementById('modelingModal');
-      modal.classList.remove('flex');
-      setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    window.nextModelingImage = function () {
-      currentModalIndex = (currentModalIndex + 1) % models.length;
-      switchModelingImage(models[currentModalIndex].image);
-    };
-
-    window.prevModelingImage = function () {
-      currentModalIndex = (currentModalIndex - 1 + models.length) % models.length;
-      switchModelingImage(models[currentModalIndex].image);
-    };
-
-    function switchModelingImage(newSrc) {
-      const modalImage = document.getElementById('modelingModalImage');
-      modalImage.classList.remove('opacity-100', 'scale-100');
-      modalImage.classList.add('opacity-0', 'scale-95');
-      setTimeout(() => {
-        modalImage.src = newSrc;
-        modalImage.classList.remove('opacity-0', 'scale-95');
-        modalImage.classList.add('opacity-100', 'scale-100');
-      }, 150);
     }
 
-    function setupSoundListeners() {
-  // Delegate hover sound
-  document.body.addEventListener("mouseover", e => {
-    if (e.target.classList.contains("hover-sound")) {
-      if (!hoverAudio.paused) {
-        hoverAudio.pause();
-        hoverAudio.currentTime = 0;
+    function createYTPlayer(iframeId) {
+      const el = document.getElementById(iframeId);
+      if (!el) return;
+      try {
+        new YT.Player(iframeId, {
+          events: {
+            onStateChange: e => {
+              if (e.data === YT.PlayerState.PLAYING) pauseBackgroundAudio();
+              else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) resumeBackgroundAudio();
+            }
+          }
+        });
+      } catch (err) {}
+    }
+
+    /* ============================================================
+       AUDIO
+       ============================================================ */
+    const disk = document.getElementById('disk');
+    const audio1 = document.getElementById('audio1');
+    const audio2 = document.getElementById('audio2');
+    const hoverAudio = document.getElementById('hoverSound');
+    const clickAudio = document.getElementById('clickSound');
+    const closeAudio = document.getElementById('closeSound');
+    const BG_MUSIC_VOLUME = 0.2;
+    audio1.volume = BG_MUSIC_VOLUME;
+    audio2.volume = BG_MUSIC_VOLUME;
+    let isPlaying = false;
+    let loopMonitor1, loopMonitor2;
+
+    function playSound(audio, silent) {
+      if (silent) return;
+      if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
       }
-      hoverAudio.play();
+      audio.play().catch(() => {});
     }
-  });
 
-  // Delegate click sound
-  document.body.addEventListener("click", e => {
-    if (e.target.classList.contains("click-sound")) {
-      if (!clickAudio.paused) {
-        clickAudio.pause();
-        clickAudio.currentTime = 0;
+    function toggleAudio() {
+      Promise.all([
+        audio1.play().then(() => audio1.pause()).catch(() => {}),
+        audio2.play().then(() => audio2.pause()).catch(() => {})
+      ]).then(() => {
+        isPlaying = !isPlaying;
+        disk.classList.toggle('text-brand', isPlaying);
+        document.getElementById('floatingMusicBtn').classList.toggle('hidden', !isPlaying);
+        document.getElementById('diskFloat').classList.toggle('text-brand', isPlaying);
+        document.getElementById('diskFloat').classList.toggle('text-muted', !isPlaying);
+        if (isPlaying) {
+          startLoopingAudio(audio1, 2);
+          startLoopingAudio(audio2, 2);
+          spawnLeaves();
+        } else {
+          stopLoopingAudio(audio1);
+          stopLoopingAudio(audio2);
+        }
+      });
+    }
+
+    /* ============================================================
+       FALLING LEAVES EFFECT
+       Lightweight DOM+CSS animation triggered when music starts.
+       ============================================================ */
+    const LEAF_GLYPHS = ['🍃', '🍂', '🍁'];
+    let leavesSpawning = false;
+
+    function spawnLeaves(count = 14) {
+      if (leavesSpawning) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      leavesSpawning = true;
+
+      const layer = document.getElementById('leafLayer');
+      const vw = window.innerWidth;
+
+      for (let i = 0; i < count; i++) {
+        const leaf = document.createElement('span');
+        leaf.className = 'leaf';
+        leaf.textContent = LEAF_GLYPHS[Math.floor(Math.random() * LEAF_GLYPHS.length)];
+
+        const size = 14 + Math.random() * 14;
+        const duration = 5 + Math.random() * 3.5;
+        const delay = Math.random() * 2.5;
+        const drift = (Math.random() - 0.5) * 220;
+        const spin = 180 + Math.random() * 360;
+        const startX = Math.random() * vw;
+
+        leaf.style.left = `${startX}px`;
+        leaf.style.fontSize = `${size}px`;
+        leaf.style.animationDuration = `${duration}s`;
+        leaf.style.animationDelay = `${delay}s`;
+        leaf.style.setProperty('--drift', `${drift}px`);
+        leaf.style.setProperty('--spin', `${spin}deg`);
+
+        leaf.addEventListener('animationend', () => leaf.remove());
+        layer.appendChild(leaf);
       }
-      clickAudio.play();
+
+      setTimeout(() => { leavesSpawning = false; }, 1200);
     }
-  });
-}
-    
-    // Initial load
-    renderCards(currentPage);
-    renderPagination();
-    setupSoundListeners();
-  });
-</script>
 
-
-<!-- Footer -->
-<footer id="aboutme" class="bg-white dark:bg-gray-900 pt-16 pb-10 text-center md:text-left">
-  <div class="max-w-6xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
-
-    <!-- Profile Image -->
-      <div class="shrink-0 flex justify-center md:justify-start">
-  <img src="indexImgs/Me.png" alt="Profile"
-       class="w-40 h-40 object-cover rounded-full shadow-md border-4 border-white dark:border-gray-700 ml-4 md:ml-6">
-</div>
-
-
-    <!-- About + Contact -->
-    <div class="flex-1">
-      <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-3">👋 About Me</h4>
-      <p class="text-gray-700 dark:text-gray-300 mb-4">
-        Hi! I’m <strong>Eric P. Jorbina Jr.</strong>, a recent graduate of Fellowship Baptist College with a strong passion for video editing, 3D modeling, and game development.
-        I'm eager to apply my IT skills in a professional environment and continuously grow within the tech industry.
-        This website was fully designed and coded by me to showcase my personal projects and creative work.
-      </p>
-
-      <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 text-gray-600 dark:text-gray-300">
-        <p><strong>Email:</strong>
-          <a href="mailto:jorbbinaeric@gmail.com" class="click-sound hover-sound text-cyan-500 hover:underline">jorbinaeric@gmail.com</a>
-        </p>
-        <p><strong>LinkedIn:</strong>
-          <a href="https://www.linkedin.com/in/eric-jorbina-a083a1349" target="_blank" class="click-sound hover-sound hover:underline">www.linkedin.com/in/eric-jorbina-a083a1349</a>
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Disclaimer -->
-  <div class="mt-10 border-t border-gray-200 dark:border-gray-700 pt-6 px-6 text-sm text-gray-500 dark:text-gray-400 text-center">
-    <p>🎵 I do not own any of the music used in the showcased videos. All audio belongs to their respective owners and is used solely for personal and non-commercial purposes.</p>
-    <p class="mt-4">&copy; 2025 Eric Jorbina Jr. All rights reserved.</p>
-  </div>
-</footer>
-
-
-
-
-<button
-  id="backToTop"
-  onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-  class="hidden fixed bottom-6 right-6 z-50 bg-cyan-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-cyan-700 transition"
->
-  ↑
-</button>
-<script>
-  const backToTopBtn = document.getElementById("backToTop");
-
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 300) {
-      backToTopBtn.classList.remove("hidden");
-    } else {
-      backToTopBtn.classList.add("hidden");
-    }
-  });
-</script>
-
-
-
-<!-- Script at the end of body -->
-<!-- Audio Elements for Hover, Click, and Close -->
-<audio id="hoverSound" preload="auto">
-  <source src="sfx/ui-sounds-pack-3-9-359722.mp3" type="audio/mpeg">
-  <source src="audio/hover.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<audio id="clickSound" preload="auto">
-  <source src="sfx/ui-sounds-pack-3-18-359720.mp3" type="audio/mpeg">
-  <source src="audio/click.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<audio id="closeSound" preload="auto">
-  <source src="sfx/ui-sounds-pack-4-6-359744.mp3" type="audio/mpeg">
-  <source src="audio/close.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-
-<script>
-  // Select audio elements
-  const hoverAudio = document.getElementById('hoverSound');
-  const clickAudio = document.getElementById('clickSound');
-  const closeAudio = document.getElementById('closeSound');
-
-  // Function to play sound and reset if already playing
-  function playSound(audio) {
-    if (!audio.paused) {
-      audio.pause();
+    function startLoopingAudio(audio, fadeSecondsBeforeEnd = 2) {
+      audio.volume = 0;
       audio.currentTime = 0;
+      audio.play().catch(() => {});
+      fadeInAudio(audio);
+      const monitor = setInterval(() => {
+        if (!isPlaying) return;
+        const timeLeft = audio.duration - audio.currentTime;
+        if (timeLeft <= fadeSecondsBeforeEnd) {
+          clearInterval(monitor);
+          fadeOutAudio(audio, () => {
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+            fadeInAudio(audio);
+            startLoopingAudio(audio, fadeSecondsBeforeEnd);
+          });
+        }
+      }, 200);
+      if (audio === audio1) loopMonitor1 = monitor;
+      if (audio === audio2) loopMonitor2 = monitor;
     }
-    audio.play();
-  }
 
-  // Add hover sound to specific elements
-  const hoverElements = document.querySelectorAll('.hover-sound');
-  hoverElements.forEach(element => {
-    element.addEventListener('mouseenter', () => playSound(hoverAudio));
-  });
+    function stopLoopingAudio(audio) {
+      if (audio === audio1 && loopMonitor1) clearInterval(loopMonitor1);
+      if (audio === audio2 && loopMonitor2) clearInterval(loopMonitor2);
+      fadeOutAudio(audio, () => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
 
-  // Add click sound to specific elements
-  const clickElements = document.querySelectorAll('.click-sound');
-  clickElements.forEach(element => {
-    element.addEventListener('click', () => playSound(clickAudio));
-  });
+    function fadeOutAudio(audio, cb) {
+      const step = 0.05;
+      const iv = setInterval(() => {
+        if (audio.volume > step) {
+          audio.volume -= step;
+        } else {
+          audio.volume = 0;
+          clearInterval(iv);
+          if (cb) cb();
+        }
+      }, 50);
+    }
 
-  // Add close sound to modal close buttons
-  const closeButtons = document.querySelectorAll('.close');
-  closeButtons.forEach(button => {
-    button.addEventListener('click', () => playSound(closeAudio));
-  });
-</script>
+    function fadeInAudio(audio) {
+      const step = 0.05;
+      const iv = setInterval(() => {
+        if (audio.volume < BG_MUSIC_VOLUME - step) {
+          audio.volume += step;
+        } else {
+          audio.volume = BG_MUSIC_VOLUME;
+          clearInterval(iv);
+        }
+      }, 50);
+    }
 
+    function pauseBackgroundAudio() {
+      if (isPlaying) {
+        stopLoopingAudio(audio1);
+        stopLoopingAudio(audio2);
+      }
+    }
 
+    function resumeBackgroundAudio() {
+      if (isPlaying) {
+        startLoopingAudio(audio1, 2);
+        startLoopingAudio(audio2, 2);
+      }
+    }
+
+    document.body.addEventListener("mouseover", e => {
+      if (e.target.classList.contains("hover-sound")) playSound(hoverAudio);
+    });
+    document.body.addEventListener("click", e => {
+      if (e.target.closest(".click-sound")) playSound(clickAudio);
+    });
+
+    /* ============================================================
+       SCRUB BAR
+       ============================================================ */
+    const sections = ["hero", "game-dev", "video-edits", "art-3d", "graphics", "arts", "contact", "aboutme"];
+    const tcButtons = document.querySelectorAll('.tc-btn');
+    tcButtons.forEach(btn => btn.addEventListener('click', () => {
+      document.getElementById(btn.dataset.target).scrollIntoView({ behavior: 'smooth' });
+      closeMobileMenu();
+    }));
+
+    function toggleMobileMenu() {
+      const nav = document.getElementById('mobileNav');
+      const isOpen = !nav.classList.contains('hidden');
+      isOpen ? closeMobileMenu() : openMobileMenu();
+    }
+
+    function openMobileMenu() {
+      document.getElementById('mobileNav').classList.remove('hidden');
+      document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'true');
+      document.getElementById('menuBar1').style.transform = 'translateY(7px) rotate(45deg)';
+      document.getElementById('menuBar2').style.opacity = '0';
+      document.getElementById('menuBar3').style.transform = 'translateY(-7px) rotate(-45deg)';
+    }
+
+    function closeMobileMenu() {
+      const nav = document.getElementById('mobileNav');
+      if (nav.classList.contains('hidden')) return;
+      nav.classList.add('hidden');
+      document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'false');
+      document.getElementById('menuBar1').style.transform = '';
+      document.getElementById('menuBar2').style.opacity = '';
+      document.getElementById('menuBar3').style.transform = '';
+    }
+
+    function updateScrub() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+      document.getElementById('scrubfill').style.width = pct + '%';
+      document.getElementById('playhead').style.left = pct + '%';
+
+      let current = sections[0];
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 120) current = id;
+      }
+      tcButtons.forEach(btn => btn.dataset.active = (btn.dataset.target === current) ? "true" : "false");
+
+      document.getElementById('backToTop').classList.toggle('hidden', scrollTop <= 300);
+    }
+    window.addEventListener('scroll', updateScrub);
+    window.addEventListener('resize', updateScrub);
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    renderGameSlides();
+    renderCarousel();
+    renderGraphics();
+    renderArts();
+    updateScrub();
+  </script>
 </body>
 </html>
-<script src="https://cdn.tailwindcss.com"></script>
