@@ -973,8 +973,8 @@
       ],
       conceptArts: [
         { src: "GameDev/FromNowhere/ConceptArt/That Guy.jpg", author: "by Kenth Jarred Pilares" },
-        { src: "GameDev/FromNowhere/ConceptArt/IMG_0108.jpg", author: "by Jim Tamson" },
-        { src: "GameDev/FromNowhere/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Kenth Jarred Pilares" },
+        { src: "GameDev/FromNowhere/ConceptArt/IMG_0108.jpg", author: "by Kenth Jarred Pilares" },
+        { src: "GameDev/FromNowhere/ConceptArt/photo_2025-01-28_11-03-53.jpg", author: "by Jim Tamson" },
       ],
       mediaItems: [
         { type: "image", src: "GameDev/FromNowhere/GameProgress/457882625_1080195720488037_4061530265910010825_n.png", caption: "Game Progress" },
@@ -988,8 +988,9 @@
       tags: ["BULLET HEAVEN", "SURVIVAL"],
       itchEmbed: "https://itch.io/embed/4470053?bg_color=0a1114&fg_color=ffffff",
       trailerEmbed: "https://www.youtube-nocookie.com/embed/GFfGe2EfOds?rel=0",
-      description: `<em>Survive the night… or become one of them.</em><br><br>A fast-paced, Vampire Survivors-inspired survival game where your only goal is simple: <strong>Stay alive for 15 minutes and beat the Final Boss.</strong> But it's never that easy.<br><br>Fight off endless waves of enemies as they swarm from every direction. The longer you survive, the stronger they become… but so do you. Level up, choose your upgrades, and build your own overpowered setup.<br><br><strong>Summon Companions</strong> — Unlock and upgrade companions that fight alongside you, attack enemies automatically, and scale in power as you level them up.<br><br><strong>Coming soon to the Google Play Store.</strong>`,
+      description: `<em>Survive the night… or become one of them.</em><br><br>A fast-paced, Vampire Survivors-inspired survival game where your only goal is simple: <strong>Stay alive for 15 minutes and beat the Final Boss.</strong> But it's never that easy.<br><br>Fight off endless waves of enemies as they swarm from every direction. The longer you survive, the stronger they become… but so do you. Level up, choose your upgrades, and build your own overpowered setup.<br><br><strong>Summon Companions</strong> — Unlock and upgrade companions that fight alongside you, attack enemies automatically, and scale in power as you level them up.<br><br><strong>Now available on the Google Play Store!</strong>`,
       image: "GameDev/TheHunted/gameicon2.png",
+      googlePlay: "https://play.google.com/store/apps/details?id=com.pixelnightproductions.thehunted&pcampaignid=web_share",
       conceptSectionTitle: "🎮 Gameplay Scenes",
       mediaSectionTitle: "🛠️ Development Videos / Pictures",
       team: [
@@ -1171,6 +1172,21 @@
               <!-- Itch.io Widgets – dark theme adapted -->
               <div class="mt-8 pt-8 border-t border-hairline">
                 <h4 class="font-display font-semibold text-lg text-center text-white mb-4">🕹️ Play the Games</h4>
+                ${game.googlePlay ? `
+                <a href="${game.googlePlay}" target="_blank" rel="noopener" aria-label="Get ${game.title} on Google Play" class="click-sound hover-sound card-hover flex items-center gap-4 bg-raised p-4 rounded-lg border border-hairline max-w-md mx-auto mb-4 hover:border-brand/60 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-10 h-10 shrink-0">
+                    <path fill="#00d4ff" d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1z"/>
+                    <path fill="#00f076" d="M470.6 213.3c19.2 11 19.2 38.4 0 49.4l-71.8 41.2-63.3-63.3 63.3-63.3 71.8 41.2-71.8-5.2z"/>
+                    <path fill="#00d4ff" d="M470.6 213.3l-71.8-41.2-63.3 63.3 63.3 63.3 71.8-41.2c19.2-11 19.2-38.4 0-44.2z"/>
+                    <path fill="#ff3a44" d="M104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+                    <path fill="#ffcf00" d="M104.6 13a24 24 0 00-9.6 19.4v447.2c0 8.1 3.6 15 9.6 19.4l229.7-243L104.6 13z"/>
+                  </svg>
+                  <span class="text-left">
+                    <span class="block text-xs text-muted font-mono uppercase tracking-wide">Get it on</span>
+                    <span class="block text-base font-display font-semibold text-white">Google Play</span>
+                  </span>
+                </a>
+                ` : ''}
                 <div class="bg-base p-2 rounded-lg border border-hairline itch-wrapper max-w-md mx-auto">
                   <iframe frameborder="0" src="${game.itchEmbed}" width="100%" height="167" class="w-full" title="Play ${game.title} on itch.io"></iframe>
                 </div>
